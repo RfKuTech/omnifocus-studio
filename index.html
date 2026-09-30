@@ -110,15 +110,15 @@
           <input type="text" id="lessonTitle" placeholder="Ex: Fundamentos de BI ou Redes de Computadores" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none">
         </div>
 
-        <!-- Leitor de Arquivos Stream com Leitura em Chunks -->
+        <!-- Leitor Otimizado de Arquivos -->
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Upload de Arquivos (Ctrl/Shift para vários)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Upload de Arquivos de Texto (TXT, MD, CSV, JSON, Código)</label>
           <div class="relative border-2 border-dashed border-slate-700 hover:border-brand-500 rounded-xl p-4 text-center cursor-pointer transition bg-slate-900/50">
-            <input type="file" id="fileInput" multiple accept=".txt,.md,.json,.csv,.html,.js,.py,.pdf,.docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            <input type="file" id="fileInput" multiple accept=".txt,.md,.json,.csv,.html,.js,.py" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
             <div id="fileUploadLabel" class="text-xs text-slate-400 flex flex-col items-center gap-1">
               <span class="text-2xl" id="uploadIcon">📁</span>
-              <span id="uploadText" class="font-medium">Clique ou arraste um ou mais arquivos</span>
-              <span class="text-[10px] text-slate-500">Leitura fatiada por Stream de Alta Performance</span>
+              <span id="uploadText" class="font-medium">Clique ou arraste arquivos de texto aqui</span>
+              <span class="text-[10px] text-slate-500">Para PDFs ou Word, copie e cole o texto na caixa abaixo</span>
             </div>
           </div>
         </div>
@@ -132,7 +132,7 @@
         <!-- Conteúdo em Texto -->
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Conteúdo Consolidado</label>
-          <textarea id="lessonContent" rows="5" placeholder="O texto dos seus arquivos ou colagens aparecerá aqui de forma unificada..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none resize-none font-mono text-xs"></textarea>
+          <textarea id="lessonContent" rows="5" placeholder="O texto dos seus arquivos ou trechos de PDFs copiados aparecerá aqui de forma unificada..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none resize-none font-mono text-xs"></textarea>
         </div>
 
         <button type="submit" id="btnGenerate" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-brand-900/20">
@@ -144,7 +144,7 @@
     <!-- Painel Principal: Player e Interatividade -->
     <section class="lg:col-span-7 flex flex-col gap-6">
       
-      <!-- Container do Player / Áudio / Transcrição -->
+      <!-- Container do Player -->
       <div id="playerContainer" class="bg-dark-surface border border-dark-border rounded-2xl p-5 min-h-[220px] flex flex-col justify-center items-center text-center relative overflow-hidden">
         <div id="playerPlaceholder" class="flex flex-col items-center gap-3">
           <span class="text-4xl opacity-40">🎮</span>
@@ -239,49 +239,24 @@
       } catch (e) {}
     }
 
-    // Leitor de Ficheiros Fatiado por Chunks (Streaming em partes de 64KB)
-    function readChunkedFile(file, onProgress) {
+    // Função de Leitura Assíncrona via Promessa com Limpeza de Memória
+    function readFileAsync(file) {
       return new Promise((resolve) => {
-        const chunkSize = 64 * 1024; // 64 KB por pedaço
-        let offset = 0;
-        let accumulatedText = `--- [Ficheiro: ${file.name}] ---\n`;
         const reader = new FileReader();
-
-        reader.onload = (e) => {
-          let text = e.target.result || '';
-          // Limpa caracteres nulos binários para impedir travamento
-          accumulatedText += text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, " ");
-
-          offset += chunkSize;
-          if (onProgress) {
-            const percent = Math.min(100, Math.round((offset / file.size) * 100));
-            onProgress(percent);
-          }
-
-          if (offset < file.size && accumulatedText.length < 300000) {
-            // Cede o controlo para o navegador processar frames da interface
-            setTimeout(readNextChunk, 5);
-          } else {
-            if (accumulatedText.length >= 300000) {
-              accumulatedText += "\n...[Conteúdo truncado para garantir o desempenho]...";
-            }
-            accumulatedText += "\n\n";
-            resolve(accumulatedText);
-          }
+        reader.onload = function(evt) {
+          const res = evt.target.result || '';
+          reader.onload = null; // Limpeza do handler para Garbage Collector
+          resolve(`\n--- [Arquivo: ${file.name}] ---\n${res}\n`);
         };
-
-        reader.onerror = () => resolve(`--- [Erro ao ler: ${file.name}] ---\n\n`);
-
-        function readNextChunk() {
-          const slice = file.slice(offset, offset + chunkSize);
-          reader.readAsText(slice);
-        }
-
-        readNextChunk();
+        reader.onerror = function() {
+          reader.onerror = null;
+          resolve('');
+        };
+        reader.readAsText(file);
       });
     }
 
-    // Leitor Geral com Atualização Fluida da UI
+    // Leitor e Processador Parado e Otimizado
     document.getElementById('fileInput').addEventListener('change', async function(e) {
       const files = Array.from(e.target.files);
       if (!files.length) return;
@@ -289,21 +264,24 @@
       const uploadText = document.getElementById('uploadText');
       const uploadIcon = document.getElementById('uploadIcon');
       const textArea = document.getElementById('lessonContent');
-      
-      uploadIcon.textContent = '⚡';
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
-        await readChunkedFile(file, (percent) => {
-          uploadText.textContent = `A ler ${file.name} (${percent}%)...`;
-        }).then(chunkText => {
-          textArea.value += chunkText;
-        });
+      uploadIcon.textContent = '⏳';
+      uploadText.textContent = `Processando ${files.length} arquivo(s)...`;
+
+      try {
+        // Leitura em paralelo não-bloqueante
+        const fileContents = await Promise.all(files.map(f => readFileAsync(f)));
+        const aggregatedText = fileContents.join('');
+
+        // Escrita única no DOM para evitar repaints sucessivos
+        textArea.value += aggregatedText;
+
+        uploadIcon.textContent = '✅';
+        uploadText.textContent = `${files.length} arquivo(s) de texto carregado(s)!`;
+      } catch (err) {
+        uploadIcon.textContent = '❌';
+        uploadText.textContent = 'Erro ao carregar arquivos.';
       }
-
-      uploadIcon.textContent = '✅';
-      uploadText.textContent = `${files.length} ficheiro(s) adicionado(s) com sucesso!`;
     });
 
     document.getElementById('btnSettings').addEventListener('click', () => {
