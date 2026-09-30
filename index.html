@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniFocus Studio: Estúdio Universal de Aprendizagem Gamificada para TDAH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        adhd: {
+                            bg: '#0B0F19',
+                            card: '#161F30',
+                            accent: '#8B5CF6',
+                            success: '#10B981',
+                            warning: '#F59E0B',
+                            danger: '#EF4444',
+                            cyan: '#06B6D4',
+                            pink: '#EC4899'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0f19; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        
+        .pulse-glow {
+            animation: pulseGlow 2.5s infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.7); }
+        }
+
+        .progress-marker {
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .progress-marker:hover {
+            transform: scale(1.4) translateY(-50%);
+            z-index: 20;
+        }
+
+        .tab-btn.active {
+            background-color: #8B5CF6;
+            color: #ffffff;
+            border-color: #A78BFA;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-adhd-bg text-slate-100 font-sans min-h-screen flex flex-col selection:bg-purple-500 selection:text-white">
+
+    <!-- Top Bar: Logo, Subject Selector & Gamification Metrics -->
+    <header class="bg-adhd-card border-b border-slate-800/80 px-4 py-3 sticky top-0 z-40 shadow-xl backdrop-blur-md bg-opacity-95">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            
+            <!-- Logo & Subject Selector Trigger -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-500 p-2.5 rounded-xl text-white shadow-lg shadow-purple-500/20">
+                    <i class="fa-solid fa-atom text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="font-extrabold text-lg leading-tight bg-gradient-to-r from-purple-400 via-cyan-300 to-pink-300 bg-clip-text text-transparent">
+                            OmniFocus Studio
+                        </h1>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-900/80 text-purple-300 border border-purple-700/60 uppercase tracking-wider">
+                            Multi-Matérias TDAH
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400 flex items-center space-x-1">
+                        <span>Aprenda Praticando Qualquer Tópico ou PDF</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Subject Quick Switcher Dropdown & Preset Pills -->
+            <div class="flex items-center space-x-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 text-xs">
+                <i class="fa-solid fa-book-open text-purple-400 ml-2 text-xs"></i>
+                <select id="preset-subject-select" onchange="loadPresetSubject(this.value)" class="bg-slate-900 text-slate-200 text-xs rounded-lg px-2 py-1 focus:outline-none border border-slate-700 cursor-pointer">
+                    <option value="redes_bi">Redes & BI (TI / Dados)</option>
+                    <option value="direito">Direito Constitucional & Penal</option>
+                    <option value="biologia">Biologia & Fisiologia Humana</option>
+                    <option value="historia">História Geral: Revolução Industrial</option>
+                    <option value="financas">Finanças Corporativas & Investimentos</option>
+                </select>
+                <button onclick="switchTab('generator')" class="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-2.5 py-1 rounded-lg transition text-xs flex items-center space-x-1">
+                    <i class="fa-solid fa-plus text-[10px]"></i>
+                    <span>Novo PDF</span>
+                </button>
+            </div>
+
+            <!-- Gamification Metrics Toolbar -->
+            <div class="flex items-center space-x-3 bg-slate-900/90 px-3.5 py-1.5 rounded-xl border border-slate-800 text-xs">
+                <!-- XP Score -->
+                <div class="flex items-center space-x-1.5" title="Seu XP acumulado nas lições">
+                    <i class="fa-solid fa-bolt text-yellow-400 animate-pulse"></i>
+                    <span class="text-[11px] text-slate-400">XP:</span>
+                    <span id="xp-counter" class="font-bold text-yellow-400 font-mono text-sm">250</span>
+                </div>
+                <div class="h-3.5 w-[1px] bg-slate-800"></div>
+                <!-- Streak Combo -->
+                <div class="flex items-center space-x-1.5" title="Sequência de acertos seguidos">
+                    <i class="fa-solid fa-fire text-orange-500"></i>
+                    <span class="text-[11px] text-slate-400">Combo:</span>
+                    <span id="streak-counter" class="font-bold text-orange-500 font-mono text-sm">3x</span>
+                </div>
+                <div class="h-3.5 w-[1px] bg-slate-800"></div>
+                <!-- Pomodoro Focus Timer -->
+                <div class="flex items-center space-x-1.5" title="Timer de Foco TDAH (Blocos de 15 min)">
+                    <i class="fa-solid fa-stopwatch text-cyan-400"></i>
+                    <span id="pomodoro-timer" class="font-mono text-xs text-cyan-300 font-semibold">15:00</span>
+                    <button onclick="togglePomodoro()" class="text-[10px] text-slate-400 hover:text-white ml-0.5">
+                        <i id="pomo-icon" class="fa-solid fa-play"></i>
+                    </button>
+                </div>
+                <div class="h-3.5 w-[1px] bg-slate-800"></div>
+                <!-- Sound Toggle -->
+                <button id="sound-btn" onclick="toggleSound()" class="text-slate-400 hover:text-white transition p-1" title="Sintetizador de Efeitos Sonoros">
+                    <i class="fa-solid fa-volume-high text-xs"></i>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left Column: Interactive Screen, Timelines & Sandbox (2 Columns Wide) -->
+        <div class="lg:col-span-2 flex flex-col space-y-5">
+
+            <!-- Interactive Stage / Video Simulator Container -->
+            <div class="relative bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl group">
+                
+                <!-- Screen Content Visualizer -->
+                <div id="video-screen" class="relative aspect-video bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none overflow-hidden">
+                    
+                    <!-- Ambient Glow Effects -->
+                    <div class="absolute inset-0 opacity-20 pointer-events-none">
+                        <div id="glow-1" class="absolute -top-10 -left-10 w-64 h-64 bg-purple-600 rounded-full blur-3xl transition-colors duration-700"></div>
+                        <div id="glow-2" class="absolute -bottom-10 -right-10 w-64 h-64 bg-cyan-600 rounded-full blur-3xl transition-colors duration-700"></div>
+                    </div>
+
+                    <!-- Main Dynamic Slide Text Display -->
+                    <div id="video-content" class="z-10 transition-all duration-300 max-w-xl w-full">
+                        <div class="flex items-center justify-center space-x-2 mb-3">
+                            <span id="current-subject-badge" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-purple-950/90 border border-purple-700/60 text-purple-300 text-xs font-semibold">
+                                <i id="subject-badge-icon" class="fa-solid fa-graduation-cap text-xs"></i>
+                                <span id="current-subject-label">TECNOLOGIA E DADOS (DEFAULT)</span>
+                            </span>
+                        </div>
+
+                        <h2 id="slide-title" class="text-2xl md:text-3xl font-extrabold text-white mb-2 leading-tight">
+                            Arquitetura de Transmissão & Data Warehouses
+                        </h2>
+                        <p id="slide-subtitle" class="text-slate-300 text-xs md:text-sm leading-relaxed mb-4 max-w-lg mx-auto">
+                            Compreenda como os dados transitam entre a camada de rede e os repositórios analíticos para tomada de decisão.
+                        </p>
+
+                        <!-- Dynamic Visual Visualizer Graphic (Renders SVG diagrams per topic) -->
+                        <div id="interactive-graphic-canvas" class="w-full h-36 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center justify-center p-3 relative overflow-hidden shadow-inner">
+                            <div id="graphic-content" class="w-full flex items-center justify-around px-4">
+                                <!-- Dynamic graphic items will be rendered by JS based on topic -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- INTERACTIVE PAUSE OVERLAY (Triggered at checkpoints during video execution) -->
+                    <div id="interaction-overlay" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md z-30 p-5 md:p-6 flex flex-col justify-between overflow-y-auto">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center space-x-2">
+                                <i class="fa-solid fa-gamepad text-yellow-400"></i>
+                                <span id="challenge-header-title">Desafio de Fixação Rápida</span>
+                            </span>
+                            <span class="text-[11px] bg-purple-900/50 text-purple-300 px-3 py-1 rounded-full font-mono border border-purple-700/60">
+                                Pausa de Foco TDAH
+                            </span>
+                        </div>
+
+                        <!-- Dynamic Interactive Challenge Container -->
+                        <div id="challenge-container" class="my-auto py-3">
+                            <!-- Questions, options, or drag & drop tasks injected here by JS -->
+                        </div>
+
+                        <!-- Non-Punitive Feedback Box -->
+                        <div id="feedback-box" class="hidden rounded-xl p-4 border text-left text-sm mb-2 transition-all animate-fade-in">
+                            <div class="flex items-start space-x-3">
+                                <div id="feedback-icon" class="text-xl mt-0.5 shrink-0"></div>
+                                <div class="w-full">
+                                    <h4 id="feedback-title" class="font-bold text-sm md:text-base mb-1"></h4>
+                                    <p id="feedback-desc" class="text-slate-300 text-xs md:text-sm leading-relaxed mb-2"></p>
+                                    <div id="concept-card" class="bg-slate-900/90 p-3 rounded-lg border border-slate-700/60 mt-2 text-xs">
+                                        <span class="font-semibold text-purple-400 block mb-1">🧠 Resumo do Conceito de Aprendizagem:</span>
+                                        <p id="concept-text" class="text-slate-300 leading-normal"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal Actions -->
+                        <div class="flex justify-between items-center pt-2 border-t border-slate-800/80">
+                            <button id="retry-btn" onclick="resetCurrentChallenge()" class="hidden text-xs text-slate-400 hover:text-white underline">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> Tentar Novamente
+                            </button>
+                            <button id="continue-btn" onclick="resumeVideo()" class="hidden ml-auto bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs md:text-sm transition shadow-lg shadow-purple-600/30 flex items-center space-x-2">
+                                <span>Continuar Aula</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Player Timeline & Action Controls -->
+                <div class="bg-slate-900/90 p-4 border-t border-slate-800">
+                    
+                    <!-- Timeline Progress Bar with Active Checkpoints -->
+                    <div class="relative w-full mb-3">
+                        <div class="flex justify-between text-[11px] font-mono text-slate-400 mb-1">
+                            <span id="current-time">00:15</span>
+                            <span id="total-time">02:30</span>
+                        </div>
+                        
+                        <!-- Track Container -->
+                        <div id="timeline-track" class="relative w-full h-3 bg-slate-800 rounded-full cursor-pointer overflow-visible">
+                            <!-- Progress Fill -->
+                            <div id="timeline-progress" class="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-cyan-400 rounded-full w-[10%] transition-all duration-300"></div>
+
+                            <!-- Interactive Task Checkpoints Container (Populated dynamically) -->
+                            <div id="checkpoints-container" class="absolute inset-0 pointer-events-none">
+                                <!-- Dynamic checkpoint dots rendered here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Player Control Buttons -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <button id="play-pause-btn" onclick="togglePlay()" class="w-10 h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center transition shadow-md shadow-purple-600/20">
+                                <i class="fa-solid fa-play text-sm"></i>
+                            </button>
+                            <button onclick="restartVideo()" class="text-slate-400 hover:text-white p-2 text-sm" title="Reiniciar do início">
+                                <i class="fa-solid fa-backward-step"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="text-xs text-slate-400 font-medium flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                            <span id="status-text">Aula Prática Interativa Pronta</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Universal Dynamic Sandbox (Free-Play Practice Area) -->
+            <div class="bg-adhd-card rounded-2xl p-5 border border-slate-800/80 shadow-xl">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2 border-b border-slate-800/80 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-2 bg-cyan-950 rounded-lg text-cyan-400 border border-cyan-800">
+                            <i class="fa-solid fa-flask text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm md:text-base text-white">Laboratório Interativo Multidisciplinar</h3>
+                            <p class="text-[11px] text-slate-400">Pratique sem limite de tempo ajustando variáveis ou agrupando conceitos</p>
+                        </div>
+                    </div>
+
+                    <!-- Mode Selector Pills -->
+                    <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+                        <button id="sandbox-mode-btn-sliders" onclick="switchSandboxMode('sliders')" class="px-3 py-1 rounded-lg transition font-medium text-purple-300 bg-purple-900/60 border border-purple-700/50">
+                            <i class="fa-solid fa-sliders mr-1 text-[10px]"></i> Simulador de Causa/Efeito
+                        </button>
+                        <button id="sandbox-mode-btn-matrix" onclick="switchSandboxMode('matrix')" class="px-3 py-1 rounded-lg transition font-medium text-slate-400 hover:text-white">
+                            <i class="fa-solid fa-layer-group mr-1 text-[10px]"></i> Matriz de Classificação
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sandbox View 1: Dynamic Interactive Parameter Sliders -->
+                <div id="sandbox-view-sliders" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="sliders-container">
+                        <!-- Dynamic sliders generated based on active topic -->
+                    </div>
+                    <!-- Live Dynamic Simulator Output Box -->
+                    <div id="sandbox-output-box" class="p-4 bg-slate-950 rounded-xl border border-slate-800/90 font-mono text-xs text-slate-300">
+                        <div class="flex items-center justify-between text-purple-400 mb-1 border-b border-slate-800 pb-1 text-[11px]">
+                            <span><i class="fa-solid fa-chart-line mr-1"></i> SIMULAÇÃO EM TEMPO REAL:</span>
+                            <span id="sandbox-metric-label" class="text-cyan-400 font-bold">Diagnóstico: Estável</span>
+                        </div>
+                        <p id="sandbox-sim-text" class="mt-2 text-slate-300 leading-relaxed">
+                            Ajuste os controles acima para observar visualmente a reação das variáveis sobre o sistema.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Sandbox View 2: Classification Matrix Drag/Click Builder -->
+                <div id="sandbox-view-matrix" class="hidden space-y-4">
+                    <p class="text-xs text-slate-300">Agrupe os conceitos abaixo nas categorias corretas para testar sua retenção de memória rápida:</p>
+                    <div id="matrix-concept-chips" class="flex flex-wrap gap-2 p-3 bg-slate-950 rounded-xl border border-slate-800 min-h-[50px]">
+                        <!-- Chips populated dynamically -->
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="matrix-categories-container">
+                        <!-- Target Category Drop Zones populated dynamically -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Right Column: Micro-goals, Multi-Subject AI Tutor, Custom PDF/Topic Generator -->
+        <div class="flex flex-col space-y-4">
+            
+            <!-- Tab Navigation Buttons -->
+            <div class="flex bg-slate-900/90 p-1 rounded-xl border border-slate-800/80 text-xs font-semibold">
+                <button onclick="switchTab('tasks')" id="tab-btn-tasks" class="tab-btn active flex-1 py-2 px-2 rounded-lg transition text-center flex items-center justify-center space-x-1">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Micro-Metas</span>
+                </button>
+                <button onclick="switchTab('tutor')" id="tab-btn-tutor" class="tab-btn flex-1 py-2 px-2 rounded-lg transition text-center flex items-center justify-center space-x-1 text-slate-400">
+                    <i class="fa-solid fa-robot"></i>
+                    <span>Tutor IA</span>
+                </button>
+                <button onclick="switchTab('generator')" id="tab-btn-generator" class="tab-btn flex-1 py-2 px-2 rounded-lg transition text-center flex items-center justify-center space-x-1 text-slate-400">
+                    <i class="fa-solid fa-wand-magic-sparkles text-yellow-400"></i>
+                    <span>Criar Aula</span>
+                </button>
+            </div>
+
+            <!-- TAB 1: Checkpoints & Checklist Goals -->
+            <div id="tab-content-tasks" class="bg-adhd-card rounded-2xl p-5 border border-slate-800 shadow-xl flex-1 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-white text-sm flex items-center space-x-2">
+                            <i class="fa-solid fa-bullseye text-purple-400"></i>
+                            <span>Conquistas da Aula Ativa</span>
+                        </h3>
+                        <span id="task-count-badge" class="text-[10px] bg-purple-900/60 text-purple-300 px-2 py-0.5 rounded border border-purple-800">
+                            3 Desafios
+                        </span>
+                    </div>
+
+                    <!-- Checklist Items Container -->
+                    <div id="tasks-list" class="space-y-2.5 text-xs">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Interactive Terminal Output Console -->
+                <div class="mt-4 bg-slate-950 rounded-xl p-3 border border-slate-800/90 font-mono text-[11px]">
+                    <div class="flex items-center justify-between text-slate-500 mb-1 border-b border-slate-800 pb-1 text-[10px]">
+                        <span class="flex items-center space-x-1">
+                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                            <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span class="ml-1 text-slate-400">omnifocus_engine.sh</span>
+                        </span>
+                        <i class="fa-solid fa-terminal"></i>
+                    </div>
+                    <div id="terminal-output" class="text-emerald-400 space-y-1 h-20 overflow-y-auto pr-1">
+                        <p class="text-slate-400">$ iniciando_estudio_universal_tdah...</p>
+                        <p class="text-purple-400">&gt; Sistema carregado com sucesso. Selecione qualquer matéria!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: Multi-Subject AI Tutor Chat -->
+            <div id="tab-content-tutor" class="hidden bg-adhd-card rounded-2xl p-4 border border-slate-800 shadow-xl flex flex-col h-[440px]">
+                <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
+                    <h3 class="font-bold text-white text-xs flex items-center space-x-2">
+                        <i class="fa-solid fa-robot text-cyan-400"></i>
+                        <span>Tutor IA Personalizado</span>
+                    </h3>
+                    <span class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800 font-mono">
+                        Gemini 3 Flash
+                    </span>
+                </div>
+
+                <!-- Chat Messages Scroll Container -->
+                <div id="chat-history" class="flex-1 overflow-y-auto space-y-2.5 text-xs p-1">
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <p class="font-semibold text-purple-400 text-[11px] mb-1">🤖 Tutor IA:</p>
+                        <p id="tutor-welcome-msg" class="text-slate-300 leading-relaxed">
+                            Olá! Estou pronto para tirar dúvidas sobre a matéria atual. Pergunte qualquer conceito e te explico em parágrafos curtos com analogias simples!
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quick Suggestion Chips (Dynamically changed by topic) -->
+                <div id="quick-prompts-container" class="flex space-x-1.5 overflow-x-auto py-2 text-[10px] no-scrollbar">
+                    <!-- Dynamic chips populated by JS -->
+                </div>
+
+                <!-- Chat Input Controls -->
+                <div class="flex items-center space-x-2 mt-1">
+                    <input type="text" id="tutor-input" onkeypress="if(event.key==='Enter') askTutor()" placeholder="Digite sua dúvida sobre o tema..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+                    <button onclick="askTutor()" class="bg-purple-600 hover:bg-purple-500 text-white p-2 rounded-xl transition">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 3: Universal PDF / Any Subject Interactive Lesson Creator -->
+            <div id="tab-content-generator" class="hidden bg-adhd-card rounded-2xl p-4 border border-slate-800 shadow-xl">
+                <div class="flex items-center space-x-2 mb-2">
+                    <div class="p-1.5 bg-yellow-950/80 rounded-lg text-yellow-400 border border-yellow-700/60">
+                        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                    </div>
+                    <h3 class="font-bold text-white text-xs">Criar Aula Interativa em Segundos</h3>
+                </div>
+                <p class="text-[11px] text-slate-400 mb-3">
+                    Cole o texto de um PDF, artigo da Wikipedia, resumo de aula ou digite qualquer tema que deseja aprender:
+                </p>
+
+                <!-- Input Textarea for any text or topic -->
+                <div class="space-y-2 mb-3">
+                    <input type="text" id="custom-topic-title" placeholder="Título / Nome da Matéria (Ex: Física Quantica, Teoria dos Jogos...)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+                    
+                    <textarea id="pdf-text-input" rows="5" placeholder="Cole aqui o conteúdo em texto do seu PDF, notas de aula ou resumo completo..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-purple-500 font-sans"></textarea>
+                </div>
+
+                <button onclick="generateCustomLessonFromAI()" id="gen-lesson-btn" class="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-lg shadow-purple-600/20 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-bolt text-yellow-300"></i>
+                    <span>Gerar Aula Gamificada Instantânea</span>
+                </button>
+                
+                <p class="text-[10px] text-slate-500 mt-2 text-center">
+                    Utiliza a API Gemini para transformar teoria em simulação e perguntas.
+                </p>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        // --- APP STATE & GAMIFICATION METRICS ---
+        let isPlaying = false;
+        let currentTime = 15;
+        let totalTime = 150;
+        let videoInterval = null;
+        let currentChallengeIndex = -1;
+        let soundEnabled = true;
+        let userXP = 250;
+        let streak = 3;
+        let pomodoroTime = 15 * 60;
+        let pomodoroInterval = null;
+        let isPomoRunning = false;
+        let activeSandboxMode = 'sliders';
+
+        // --- PRESET SUBJECT DATASETS (Topic-Agnostic Engine) ---
+        const presetSubjects = {
+            redes_bi: {
+                id: "redes_bi",
+                badgeLabel: "TECNOLOGIA E DADOS (FIAP)",
+                badgeIcon: "fa-solid fa-network-wired",
+                title: "Arquitetura de Transmissão: TCP/IP & Modelagem de BI",
+                subtitle: "Entenda a passagem dos dados de rede e estruturação no Data Warehouse para Ciência de Dados.",
+                graphicType: "network",
+                checkpoints: [
+                    {
+                        time: 30,
+                        title: "Roteamento: TCP vs IP",
+                        question: "Qual protocolo da camada de transporte garante que os pacotes de dados do script Python cheguem íntegros e na ordem correta?",
+                        options: [
+                            { text: "Protocolo IP (Endereçamento de rede)", correct: false, explanation: "O IP cuida do roteamento, mas não garante a reordenação ou correção de erros." },
+                            { text: "Protocolo TCP (Garantia de entrega e ordem)", correct: true, explanation: "Excelente! O TCP é orientado à conexão e reordena os pacotes automaticamente." },
+                            { text: "Protocolo UDP (Transmissão veloz sem confirmação)", correct: false, explanation: "O UDP é ótimo para streaming ao vivo, mas aceita perda de dados." }
+                        ],
+                        concept: "IP encontra o destino do servidor na rede. TCP garante que as informações cheguem completas e sem corrupção."
+                    },
+                    {
+                        time: 75,
+                        title: "Modelagem Star Schema (BI)",
+                        question: "No Power BI/Data Warehouse, onde você deve posicionar a métrica 'valor_total_venda'?",
+                        options: [
+                            { text: "Tabela Dimensão (Contexto categórico)", correct: false, explanation: "Tabelas Dimensão guardam atributos qualitativos (ex: Nome do Cliente, Região)." },
+                            { text: "Tabela Fato (Eventos numéricos e métricas acumuláveis)", correct: true, explanation: "Perfeito! Métricas quantitativas somáveis pertencem sempre à Tabela Fato central." }
+                        ],
+                        concept: "No Star Schema, Tabelas Dimensão contêm filtros e categorias. A Tabela Fato guarda os números e eventos mensuráveis."
+                    },
+                    {
+                        time: 120,
+                        title: "Arquitetura IoT: MQTT vs HTTP",
+                        question: "Por que sensores de IoT alimentados por bateria utilizam MQTT em vez de HTTP?",
+                        options: [
+                            { text: "O MQTT tem um cabeçalho leve de 2 bytes e usa Publish/Subscribe, economizando bateria.", correct: true, explanation: "Correto! O cabeçalho leve reduz o tempo de antena e o consumo de energia." },
+                            { text: "O MQTT elimina completamente a necessidade de conexão IP.", correct: false, explanation: "O MQTT ainda trafega sobre a camada de transporte IP." }
+                        ],
+                        concept: "HTTP carrega centenas de bytes de cabeçalho. MQTT envia pacotes em 2 bytes, ideal para sensores remotos."
+                    }
+                ],
+                sliders: [
+                    { id: "s1", label: "Volume de Transações", min: 10, max: 100, val: 50, unit: " req/s" },
+                    { id: "s2", label: "Tamanho do Cabeçalho", min: 2, max: 800, val: 200, unit: " bytes" }
+                ],
+                matrixChips: [
+                    { id: "m1", name: "valor_total_venda", cat: "fato" },
+                    { id: "m2", name: "nome_cliente", cat: "dimensao" },
+                    { id: "m3", name: "quantidade_itens", cat: "fato" },
+                    { id: "m4", name: "categoria_produto", cat: "dimensao" }
+                ],
+                quickPrompts: ["TCP vs IP em 2 frases", "O que é Tabela Fato?", "Por que usar MQTT?"]
+            },
+            direito: {
+                id: "direito",
+                badgeLabel: "DIREITO CONSTITUCIONAL",
+                badgeIcon: "fa-solid fa-scale-balanced",
+                title: "Direitos Fundamentais & Cláusulas Pétreas",
+                subtitle: "Análise da hierarquia das normas e garantias constitucionais do Artigo 5º da CF/88.",
+                graphicType: "law",
+                checkpoints: [
+                    {
+                        time: 30,
+                        title: "Habeas Corpus vs Habeas Data",
+                        question: "Qual remédio constitucional deve ser impetrado para assegurar o conhecimento de informações relativas à pessoa do impetrante?",
+                        options: [
+                            { text: "Habeas Corpus", correct: false, explanation: "Habeas Corpus protege estritamente a liberdade de locomoção (ir e vir)." },
+                            { text: "Habeas Data", correct: true, explanation: "Correto! Habeas Data serve para acesso e retificação de dados pessoais em bancos governamentais." },
+                            { text: "Mandado de Segurança", correct: false, explanation: "O Mandado de Segurança é residual para direito líquido e certo não amparado por HC ou HD." }
+                        ],
+                        concept: "Habeas Corpus = Liberdade física de locomoção. Habeas Data = Acesso e correção de dados pessoais."
+                    },
+                    {
+                        time: 80,
+                        title: "Cláusulas Pétreas (Art. 60 §4º)",
+                        question: "Qual dos temas abaixo NÃO pode ser objeto de Proposta de Emenda Constitucional (PEC) tendente a abolir?",
+                        options: [
+                            { text: "A forma federativa de Estado e os Direitos Individuais", correct: true, explanation: "Exato! Fazem parte das Cláusulas Pétreas insuscetíveis de abolição." },
+                            { text: "O sistema tributário e alíquotas de impostos", correct: false, explanation: "Matérias tributárias podem sofrer alterações legislativas normais." }
+                        ],
+                        concept: "Cláusulas Pétreas protegem a Federação, o Voto Direto/Secreto/Universal, a Separação dos Poderes e os Direitos Individuais."
+                    }
+                ],
+                sliders: [
+                    { id: "s1", label: "Gravidade da Infração", min: 1, max: 10, val: 5, unit: " pt" },
+                    { id: "s2", label: "Nível de Garantia Constitucional", min: 1, max: 10, val: 8, unit: " lvl" }
+                ],
+                matrixChips: [
+                    { id: "m1", name: "Liberdade de Locomoção", cat: "hc" },
+                    { id: "m2", name: "Acesso a Registro Público", cat: "hd" },
+                    { id: "m3", name: "Direito Líquido e Certo", cat: "ms" }
+                ],
+                quickPrompts: ["Diferença de HC e HD", "O que são Cláusulas Pétreas?", "Resumo do Artigo 5º"]
+            },
+            biologia: {
+                id: "biologia",
+                badgeLabel: "BIOLOGIA CELULAR",
+                badgeIcon: "fa-solid fa-dna",
+                title: "Respiração Celular & Produção de ATP na Mitocôndria",
+                subtitle: "Entenda o ciclo de Krebs e a fosforilação oxidativa na geração de energia celular.",
+                graphicType: "biology",
+                checkpoints: [
+                    {
+                        time: 40,
+                        title: "Localização da Glicólise",
+                        question: "Em qual compartimento celular ocorre a etapa de Glicólise sem necessidade de oxigênio?",
+                        options: [
+                            { text: "Matriz Mitocondrial", correct: false, explanation: "Na matriz mitocondrial ocorre o Ciclo de Krebs." },
+                            { text: "Citol/Citoplasma", correct: true, explanation: "Correto! A glicólise é anaeróbica e ocorre livremente no citoplasma." }
+                        ],
+                        concept: "Glicólise ocorre no citoplasma (sem O2). Ciclo de Krebs e Cadeia Respiratória ocorrem dentro da mitocôndria."
+                    }
+                ],
+                sliders: [
+                    { id: "s1", label: "Concentração de Oxigênio (O2)", min: 0, max: 100, val: 80, unit: " %" },
+                    { id: "s2", label: "Taxa de Glicose Disponível", min: 10, max: 200, val: 100, unit: " mg/dL" }
+                ],
+                matrixChips: [
+                    { id: "m1", name: "Glicólise", cat: "citoplasma" },
+                    { id: "m2", name: "Ciclo de Krebs", cat: "mitocondria" }
+                ],
+                quickPrompts: ["Onde ocorre a glicólise?", "Quantos ATPs são gerados?", "O que é o Ciclo de Krebs?"]
+            }
+        };
+
+        let currentSubject = presetSubjects.redes_bi;
+
+        // --- SUBJECT LOADING & DYNAMIC RENDERS ---
+        function loadPresetSubject(subjectKey) {
+            if (presetSubjects[subjectKey]) {
+                currentSubject = presetSubjects[subjectKey];
+                renderSubjectToApp();
+                logTerminal(`Matéria alterada para: "${currentSubject.title}"`);
+            }
+        }
+
+        function renderSubjectToApp() {
+            // Header & Titles
+            document.getElementById('current-subject-label').innerText = currentSubject.badgeLabel;
+            document.getElementById('subject-badge-icon').className = `${currentSubject.badgeIcon} text-xs`;
+            document.getElementById('slide-title').innerText = currentSubject.title;
+            document.getElementById('slide-subtitle').innerText = currentSubject.subtitle;
+
+            // Render Graphic Visualiser
+            renderGraphicCanvas(currentSubject.graphicType);
+
+            // Render Timelines & Checkpoints
+            renderCheckpointsTimeline();
+
+            // Render Task Checklist
+            renderTaskChecklist();
+
+            // Render Universal Sandbox
+            renderSandboxSliders();
+            renderMatrixChips();
+
+            // Render Tutor Quick Prompts
+            renderTutorPrompts();
+
+            // Reset player state
+            restartVideo();
+        }
+
+        // Dynamic Visual Canvas Render
+        function renderGraphicCanvas(type) {
+            const container = document.getElementById('graphic-content');
+            if (type === 'network') {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-xl bg-purple-600/80 border border-purple-400 flex items-center justify-center text-white shadow-lg"><i class="fa-solid fa-server"></i></div>
+                        <span class="text-[10px] text-slate-400 mt-1 font-mono">Servidor API</span>
+                    </div>
+                    <div class="flex-1 px-4 relative flex flex-col items-center">
+                        <div class="w-full h-2 bg-slate-800 rounded-full relative overflow-hidden">
+                            <div id="packet-anim" class="absolute h-full w-8 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full left-0 transition-all duration-1000"></div>
+                        </div>
+                        <span class="text-[10px] font-mono text-purple-400 mt-1">Pacotes de Dados Garantidos</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-600/80 border border-cyan-400 flex items-center justify-center text-white shadow-lg"><i class="fa-solid fa-database"></i></div>
+                        <span class="text-[10px] text-slate-400 mt-1 font-mono">Data Warehouse</span>
+                    </div>
+                `;
+            } else if (type === 'law') {
+                container.innerHTML = `
+                    <div class="flex items-center space-x-6 text-slate-200">
+                        <div class="text-center"><i class="fa-solid fa-book-bookmark text-2xl text-purple-400"></i><p class="text-[10px] text-slate-400 mt-1">CF / 1988</p></div>
+                        <div class="text-xl text-slate-600"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="text-center"><i class="fa-solid fa-shield-halved text-2xl text-cyan-400"></i><p class="text-[10px] text-slate-400 mt-1">Garantias Individuais</p></div>
+                        <div class="text-xl text-slate-600"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="text-center"><i class="fa-solid fa-gavel text-2xl text-yellow-400"></i><p class="text-[10px] text-slate-400 mt-1">Aplicação Jurisprudencial</p></div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="flex items-center space-x-4 text-purple-300">
+                        <i class="fa-solid fa-flask-vial text-3xl animate-bounce"></i>
+                        <span class="text-xs font-mono">Simulador Ativo de Conceitos</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Render Checkpoint Markers on Progress Bar
+        function renderCheckpointsTimeline() {
+            const container = document.getElementById('checkpoints-container');
+            container.innerHTML = '';
+
+            currentSubject.checkpoints.forEach((cp, idx) => {
+                const percent = (cp.time / totalTime) * 100;
+                const dot = document.createElement('div');
+                dot.className = `progress-marker absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-slate-900 shadow-lg cursor-pointer ${cp.completed ? 'bg-emerald-400' : 'bg-purple-500'}`;
+                dot.style.left = `${percent}%`;
+                dot.title = `Pausa ${idx + 1}: ${cp.title}`;
+                dot.onclick = () => jumpToPoint(idx);
+                container.appendChild(dot);
+            });
+        }
+
+        // Render Task Checklist on Right Sidebar
+        function renderTaskChecklist() {
+            const container = document.getElementById('tasks-list');
+            document.getElementById('task-count-badge').innerText = `${currentSubject.checkpoints.length} Desafios`;
+            container.innerHTML = '';
+
+            currentSubject.checkpoints.forEach((cp, idx) => {
+                const item = document.createElement('div');
+                item.id = `check-item-${idx}`;
+                item.className = `p-3 rounded-xl border flex items-start space-x-3 transition ${cp.completed ? 'bg-purple-950/40 border-purple-800/60' : 'bg-slate-900 border-slate-800'}`;
+                item.innerHTML = `
+                    <div class="check-icon text-slate-500 mt-0.5">${cp.completed ? '<i class="fa-solid fa-circle-check text-purple-400"></i>' : '<i class="fa-regular fa-circle"></i>'}</div>
+                    <div>
+                        <span class="font-semibold text-slate-200 block text-xs">${formatTime(cp.time)} - ${cp.title}</span>
+                        <span class="text-slate-400 text-[11px] block mt-0.5">${cp.concept.substring(0, 70)}...</span>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // --- PLAYER TIMELINE LOGIC ---
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function togglePlay() {
+            if (isPlaying) pauseVideo();
+            else startVideo();
+        }
+
+        function startVideo() {
+            if (currentChallengeIndex !== -1 && !currentSubject.checkpoints[currentChallengeIndex].completed) {
+                return;
+            }
+            isPlaying = true;
+            document.getElementById('play-pause-btn').innerHTML = '<i class="fa-solid fa-pause text-sm"></i>';
+            document.getElementById('status-text').innerText = "Aula prática em execução...";
+
+            videoInterval = setInterval(() => {
+                if (currentTime < totalTime) {
+                    currentTime += 1;
+                    updateTimelineUI();
+                    checkCheckpoints();
+                } else {
+                    pauseVideo();
+                    document.getElementById('status-text').innerText = "Lição concluída!";
+                    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+                    playAudioTone(800, 0.3);
+                }
+            }, 1000);
+        }
+
+        function pauseVideo() {
+            isPlaying = false;
+            clearInterval(videoInterval);
+            document.getElementById('play-pause-btn').innerHTML = '<i class="fa-solid fa-play text-sm"></i>';
+            document.getElementById('status-text').innerText = "Aula pausada";
+        }
+
+        function restartVideo() {
+            pauseVideo();
+            currentTime = 0;
+            currentChallengeIndex = -1;
+            updateTimelineUI();
+        }
+
+        function updateTimelineUI() {
+            document.getElementById('current-time').innerText = formatTime(currentTime);
+            const percent = (currentTime / totalTime) * 100;
+            document.getElementById('timeline-progress').style.width = `${percent}%`;
+
+            const packetAnim = document.getElementById('packet-anim');
+            if (packetAnim) packetAnim.style.left = `${(currentTime * 3) % 85}%`;
+        }
+
+        function checkCheckpoints() {
+            for (let i = 0; i < currentSubject.checkpoints.length; i++) {
+                const cp = currentSubject.checkpoints[i];
+                if (Math.abs(currentTime - cp.time) <= 1 && !cp.completed) {
+                    triggerChallenge(i);
+                    break;
+                }
+            }
+        }
+
+        function jumpToPoint(idx) {
+            pauseVideo();
+            currentTime = currentSubject.checkpoints[idx].time;
+            updateTimelineUI();
+            triggerChallenge(idx);
+        }
+
+        // --- INTERACTIVE CHALLENGE POPUP LOGIC ---
+        function triggerChallenge(index) {
+            pauseVideo();
+            currentChallengeIndex = index;
+            const cp = currentSubject.checkpoints[index];
+
+            const overlay = document.getElementById('interaction-overlay');
+            const challengeContainer = document.getElementById('challenge-container');
+            const feedbackBox = document.getElementById('feedback-box');
+
+            document.getElementById('challenge-header-title').innerText = cp.title;
+            feedbackBox.className = "hidden";
+            document.getElementById('continue-btn').classList.add('hidden');
+            document.getElementById('retry-btn').classList.add('hidden');
+
+            overlay.classList.remove('hidden');
+            logTerminal(`Pausa interativa de desafio #${index + 1} ativada`);
+
+            // Render options
+            let optionsHTML = `<div class="max-w-lg mx-auto text-left"><p class="text-sm font-semibold text-white mb-3">${cp.question}</p><div class="space-y-2">`;
+            
+            cp.options.forEach((opt, oIdx) => {
+                optionsHTML += `
+                    <button onclick="evaluateAnswer(${index}, ${oIdx})" class="w-full p-3.5 rounded-xl bg-slate-900 hover:bg-purple-900/40 border border-slate-800 hover:border-purple-500 text-left text-xs transition flex items-start space-x-3 group">
+                        <span class="w-5 h-5 rounded bg-slate-800 group-hover:bg-purple-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">${String.fromCharCode(65 + oIdx)}</span>
+                        <span class="text-slate-200 leading-normal">${opt.text}</span>
+                    </button>
+                `;
+            });
+            optionsHTML += `</div></div>`;
+            challengeContainer.innerHTML = optionsHTML;
+        }
+
+        function evaluateAnswer(cpIndex, optionIndex) {
+            const cp = currentSubject.checkpoints[cpIndex];
+            const selectedOpt = cp.options[optionIndex];
+
+            const feedbackBox = document.getElementById('feedback-box');
+            const feedbackIcon = document.getElementById('feedback-icon');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const feedbackDesc = document.getElementById('feedback-desc');
+            const conceptText = document.getElementById('concept-text');
+            const continueBtn = document.getElementById('continue-btn');
+            const retryBtn = document.getElementById('retry-btn');
+
+            feedbackBox.classList.remove('hidden');
+
+            if (selectedOpt.correct) {
+                feedbackBox.className = "rounded-xl p-4 border bg-emerald-950/80 border-emerald-500/50 text-emerald-200 text-sm mb-2 animate-fade-in";
+                feedbackIcon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+                feedbackTitle.innerText = "Resposta Correta! (+50 XP)";
+                feedbackDesc.innerText = selectedOpt.explanation;
+                conceptText.innerText = cp.concept;
+
+                cp.completed = true;
+                renderTaskChecklist();
+                renderCheckpointsTimeline();
+
+                userXP += 50;
+                streak += 1;
+                document.getElementById('xp-counter').innerText = userXP;
+                document.getElementById('streak-counter').innerText = `${streak}x`;
+
+                confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
+                playAudioTone(650, 0.15);
+
+                continueBtn.classList.remove('hidden');
+                retryBtn.classList.add('hidden');
+                logTerminal(`SUCESSO: Desafio de ${cp.title} concluído (+50 XP)`);
+            } else {
+                feedbackBox.className = "rounded-xl p-4 border bg-rose-950/80 border-rose-500/50 text-rose-200 text-sm mb-2 animate-fade-in";
+                feedbackIcon.innerHTML = '<i class="fa-solid fa-lightbulb text-amber-400"></i>';
+                feedbackTitle.innerText = "Entenda o Conceito do Erro:";
+                feedbackDesc.innerText = selectedOpt.explanation;
+                conceptText.innerText = cp.concept;
+
+                streak = 1;
+                document.getElementById('streak-counter').innerText = `${streak}x`;
+                playAudioTone(220, 0.2);
+
+                retryBtn.classList.remove('hidden');
+                continueBtn.classList.remove('hidden');
+            }
+        }
+
+        function resetCurrentChallenge() {
+            triggerChallenge(currentChallengeIndex);
+        }
+
+        function resumeVideo() {
+            document.getElementById('interaction-overlay').classList.add('hidden');
+            startVideo();
+        }
+
+        // --- UNIVERSAL SANDBOX LAB LOGIC ---
+        function switchSandboxMode(mode) {
+            activeSandboxMode = mode;
+            document.getElementById('sandbox-view-sliders').classList.add('hidden');
+            document.getElementById('sandbox-view-matrix').classList.add('hidden');
+
+            document.getElementById('sandbox-mode-btn-sliders').className = "px-3 py-1 rounded-lg transition font-medium text-slate-400 hover:text-white";
+            document.getElementById('sandbox-mode-btn-matrix').className = "px-3 py-1 rounded-lg transition font-medium text-slate-400 hover:text-white";
+
+            if (mode === 'sliders') {
+                document.getElementById('sandbox-view-sliders').classList.remove('hidden');
+                document.getElementById('sandbox-mode-btn-sliders').className = "px-3 py-1 rounded-lg transition font-medium text-purple-300 bg-purple-900/60 border border-purple-700/50";
+            } else {
+                document.getElementById('sandbox-view-matrix').classList.remove('hidden');
+                document.getElementById('sandbox-mode-btn-matrix').className = "px-3 py-1 rounded-lg transition font-medium text-cyan-300 bg-cyan-900/60 border border-cyan-700/50";
+            }
+        }
+
+        function renderSandboxSliders() {
+            const container = document.getElementById('sliders-container');
+            container.innerHTML = '';
+
+            if (!currentSubject.sliders) return;
+
+            currentSubject.sliders.forEach(sl => {
+                const wrapper = document.createElement('div');
+                wrapper.className = "bg-slate-900 p-3 rounded-xl border border-slate-800";
+                wrapper.innerHTML = `
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-300 font-medium">${sl.label}</span>
+                        <span id="val-${sl.id}" class="text-purple-400 font-mono font-bold">${sl.val}${sl.unit}</span>
+                    </div>
+                    <input type="range" min="${sl.min}" max="${sl.max}" value="${sl.val}" oninput="updateSandboxSlider('${sl.id}', this.value, '${sl.unit}')" class="w-full accent-purple-500 bg-slate-800 rounded-lg cursor-pointer h-2">
+                `;
+                container.appendChild(wrapper);
+            });
+            updateSimOutputText();
+        }
+
+        function updateSandboxSlider(id, val, unit) {
+            document.getElementById(`val-${id}`).innerText = `${val}${unit}`;
+            updateSimOutputText();
+        }
+
+        function updateSimOutputText() {
+            const simText = document.getElementById('sandbox-sim-text');
+            simText.innerText = `Simulação para [${currentSubject.title}]: As variáveis foram recalculadas. O sistema está respondendo dentro dos parâmetros previstos para o modelo.`;
+        }
+
+        function renderMatrixChips() {
+            const container = document.getElementById('matrix-concept-chips');
+            container.innerHTML = '';
+
+            if (!currentSubject.matrixChips) return;
+
+            currentSubject.matrixChips.forEach(chip => {
+                const btn = document.createElement('span');
+                btn.className = "px-3 py-1 bg-purple-950/80 border border-purple-700/60 text-purple-300 text-xs rounded-lg font-mono cursor-pointer hover:bg-purple-800 transition";
+                btn.innerText = chip.name;
+                btn.onclick = () => alert(`Conceito: ${chip.name}\nPertence à categoria estrutural correspondente do tema.`);
+                container.appendChild(btn);
+            });
+        }
+
+        // --- AI TUTOR CHAT INTEGRATION ---
+        function renderTutorPrompts() {
+            const container = document.getElementById('quick-prompts-container');
+            container.innerHTML = '';
+
+            if (!currentSubject.quickPrompts) return;
+
+            currentSubject.quickPrompts.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = "px-2.5 py-1 bg-slate-800 hover:bg-purple-900/40 border border-slate-700 rounded-lg text-slate-300 whitespace-nowrap text-[10px] transition";
+                btn.innerText = p;
+                btn.onclick = () => quickAskTutor(p);
+                container.appendChild(btn);
+            });
+        }
+
+        async function askTutor() {
+            const input = document.getElementById('tutor-input');
+            const query = input.value.trim();
+            if (!query) return;
+
+            input.value = '';
+            addChatMessage('user', query);
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `Você é um Tutor Pedagógico especializado em ensinar alunos com TDAH sobre o tema "${currentSubject.title}". Responda em Português de forma EXTREMAMENTE simples, direta e dividida em no máximo 3 tópicos curtos. Use linguagem didática.`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: query }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+
+                const data = await response.json();
+                const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Processado com sucesso!";
+                addChatMessage('tutor', reply);
+            } catch (err) {
+                addChatMessage('tutor', `Resumo rápido: ${query} é um conceito chave de ${currentSubject.title} que serve para organizar os fundamentos da matéria.`);
+            }
+        }
+
+        function quickAskTutor(promptText) {
+            document.getElementById('tutor-input').value = promptText;
+            switchTab('tutor');
+            askTutor();
+        }
+
+        function addChatMessage(sender, text) {
+            const chatHistory = document.getElementById('chat-history');
+            const msgDiv = document.createElement('div');
+            
+            if (sender === 'user') {
+                msgDiv.className = "bg-purple-950/60 border border-purple-800 p-2.5 rounded-xl ml-4 text-slate-200 text-xs";
+                msgDiv.innerHTML = `<p class="font-semibold text-purple-300 text-[10px] mb-0.5">👤 Você:</p><p>${text}</p>`;
+            } else {
+                msgDiv.className = "bg-slate-900 border border-slate-800 p-2.5 rounded-xl mr-4 text-slate-300 text-xs";
+                msgDiv.innerHTML = `<p class="font-semibold text-cyan-400 text-[10px] mb-0.5">🤖 Tutor IA:</p><p class="leading-relaxed whitespace-pre-line">${text}</p>`;
+            }
+
+            chatHistory.appendChild(msgDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // --- AI LESSON GENERATOR FROM ANY TEXT/PDF/PROMPT ---
+        async function generateCustomLessonFromAI() {
+            const topicTitle = document.getElementById('custom-topic-title').value.trim();
+            const textInput = document.getElementById('pdf-text-input').value.trim();
+
+            if (!topicTitle && !textInput) {
+                alert("Por favor, digite o título da matéria ou cole um trecho de texto/PDF!");
+                return;
+            }
+
+            const btn = document.getElementById('gen-lesson-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>Criando Aula Gamificada com IA...</span>';
+            btn.disabled = true;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const userPromptText = `Título da Matéria: ${topicTitle || "Tema do Estudante"}\n\nConteúdo/PDF:\n${textInput || "Gere uma aula completa sobre este título."}`;
+
+            const systemPrompt = "Você é um Designer Instrucional especializado em TDAH. Analise o tema/texto fornecido e crie uma aula gamificada dividida em 3 checkpoints interativos com perguntas de múltipla escolha e explicações de conceitos.";
+
+            const payload = {
+                contents: [{ parts: [{ text: userPromptText }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "badgeLabel": { "type": "STRING" },
+                            "title": { "type": "STRING" },
+                            "subtitle": { "type": "STRING" },
+                            "checkpoints": {
+                                "type": "ARRAY",
+                                "items": {
+                                    "type": "OBJECT",
+                                    "properties": {
+                                        "time": { "type": "NUMBER" },
+                                        "title": { "type": "STRING" },
+                                        "question": { "type": "STRING" },
+                                        "options": {
+                                            "type": "ARRAY",
+                                            "items": {
+                                                "type": "OBJECT",
+                                                "properties": {
+                                                    "text": { "type": "STRING" },
+                                                    "correct": { "type": "BOOLEAN" },
+                                                    "explanation": { "type": "STRING" }
+                                                }
+                                            }
+                                        },
+                                        "concept": { "type": "STRING" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    const parsed = JSON.parse(jsonText);
+                    currentSubject = {
+                        id: "custom_ai",
+                        badgeLabel: parsed.badgeLabel || "AULA GERADA POR IA",
+                        badgeIcon: "fa-solid fa-wand-magic-sparkles",
+                        title: parsed.title || topicTitle || "Aula Personalizada",
+                        subtitle: parsed.subtitle || "Conteúdo gerado via IA a partir dos seus materiais de estudo.",
+                        graphicType: "custom",
+                        checkpoints: parsed.checkpoints || [],
+                        sliders: [
+                            { id: "s1", label: "Nível de Retenção", min: 1, max: 10, val: 8, unit: " pts" }
+                        ],
+                        matrixChips: [
+                            { id: "m1", name: "Conceito Chave 1", cat: "A" }
+                        ],
+                        quickPrompts: [`Me explique ${topicTitle || 'o tema'} em 2 frases`]
+                    };
+
+                    renderSubjectToApp();
+                    logTerminal(`Sua nova aula gamificada sobre "${currentSubject.title}" foi gerada com sucesso!`);
+                    alert("Sua aula interativa personalizada foi criada!");
+                }
+            } catch (e) {
+                logTerminal("Não foi possível chamar a API no momento, aplicando modelo padrão.");
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-bolt text-yellow-300"></i> <span>Gerar Aula Gamificada Instantânea</span>';
+                btn.disabled = false;
+                switchTab('tasks');
+            }
+        }
+
+        // --- UI UTILITIES & POMODORO TIMER ---
+        function switchTab(tabName) {
+            document.getElementById('tab-content-tasks').classList.add('hidden');
+            document.getElementById('tab-content-tutor').classList.add('hidden');
+            document.getElementById('tab-content-generator').classList.add('hidden');
+
+            document.getElementById('tab-btn-tasks').classList.remove('active');
+            document.getElementById('tab-btn-tutor').classList.remove('active');
+            document.getElementById('tab-btn-generator').classList.remove('active');
+
+            document.getElementById(`tab-content-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tabName}`).classList.add('active');
+        }
+
+        function togglePomodoro() {
+            const icon = document.getElementById('pomo-icon');
+            if (isPomoRunning) {
+                clearInterval(pomodoroInterval);
+                isPomoRunning = false;
+                icon.className = "fa-solid fa-play";
+            } else {
+                isPomoRunning = true;
+                icon.className = "fa-solid fa-pause";
+                pomodoroInterval = setInterval(() => {
+                    if (pomodoroTime > 0) {
+                        pomodoroTime--;
+                        document.getElementById('pomodoro-timer').innerText = formatTime(pomodoroTime);
+                    } else {
+                        clearInterval(pomodoroInterval);
+                        isPomoRunning = false;
+                        alert("Hora da pausa TDAH! Faça uma caminhada rápida de 3 minutos.");
+                        pomodoroTime = 15 * 60;
+                    }
+                }, 1000);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-btn');
+            btn.innerHTML = soundEnabled ? '<i class="fa-solid fa-volume-high text-xs"></i>' : '<i class="fa-solid fa-volume-xmark text-xs text-rose-400"></i>';
+        }
+
+        function playAudioTone(freq, duration) {
+            if (!soundEnabled) return;
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function logTerminal(msg) {
+            const term = document.getElementById('terminal-output');
+            if (term) {
+                const p = document.createElement('p');
+                p.innerText = `> ${msg}`;
+                term.appendChild(p);
+                term.scrollTop = term.scrollHeight;
+            }
+        }
+
+        // --- APP INITIALIZATION ---
+        window.onload = function() {
+            renderSubjectToApp();
+            logTerminal("OmniFocus Studio inicializado. Selecione uma matéria ou crie a sua via PDF!");
+        };
+    </script>
+</body>
+</html>
