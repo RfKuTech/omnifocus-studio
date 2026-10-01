@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OmniFocus Studio - Plataforma Gamificada de Aprendizagem</title>
-  
+
+  <!-- Política de Segurança de Conteúdo (CSP) Rígida -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://www.youtube.com https://accounts.google.com; connect-src 'self' https://omnifocus-studio.vercel.app https://www.googleapis.com https://generativelanguage.googleapis.com;">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -13,13 +16,13 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Extrator PDF.js -->
+  <!-- Extrator PDF.js Oficial -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
   </script>
 
-  <!-- Relatórios PDF -->
+  <!-- Gerador de Relatórios em PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- Google Identity SDKs -->
@@ -75,7 +78,7 @@
 </head>
 <body class="bg-dark-base text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-slate-900">
 
-  <!-- Notification Container -->
+  <!-- Container de Notificações Toast -->
   <div id="toastContainer" class="fixed top-20 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Header Superior -->
@@ -89,13 +92,13 @@
         </div>
         <div>
           <h1 class="font-bold text-lg leading-none text-white tracking-wide flex items-center gap-2">
-            OmniFocus Studio <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/30">Hardened v2.2</span>
+            OmniFocus Studio <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/30">Enterprise v3.0</span>
           </h1>
           <p class="text-xs text-slate-400 mt-0.5">Plataforma Gamificada de Aprendizagem Interativa</p>
         </div>
       </div>
 
-      <!-- Placar e Controles -->
+      <!-- Placar e Ações -->
       <div class="flex items-center gap-3 text-sm font-semibold">
         <div id="timerBadge" class="hidden items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl text-amber-400 font-mono font-bold animate-pulse">
           <i data-lucide="timer" class="w-4 h-4"></i> <span id="timerDisplay">10:00</span>
@@ -133,7 +136,7 @@
       <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
         <i data-lucide="cloud-lightning" class="w-5 h-5 text-brand-500"></i> Sincronização em Nuvem
       </h3>
-      <p class="text-xs text-slate-400 mb-5">Escolha o seu provedor para sincronizar o progresso na nuvem.</p>
+      <p class="text-xs text-slate-400 mb-5">Escolha o seu provedor para sincronizar seu progresso com segurança.</p>
       
       <div class="space-y-3">
         <button id="btnLoginGoogle" class="w-full bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
@@ -272,7 +275,7 @@
         </div>
       </div>
 
-      <!-- Arena -->
+      <!-- Arena Interativa -->
       <div id="interactiveArena" class="glass-panel rounded-2xl p-6 border border-slate-800/80 shadow-xl flex-1 flex flex-col justify-between overflow-y-auto max-h-[500px]">
         <div id="arenaContent" class="space-y-4">
           
@@ -338,17 +341,10 @@
       isSpeaking: false
     };
 
-    // Prevenção estrita de XSS com Sanitização Segura no DOM
+    // Função de Atribuição Segura contra Injeção de Código (Contextual Text Isolation)
     function safeSetText(elementId, text) {
       const el = document.getElementById(elementId);
-      if (el) el.textContent = text || '';
-    }
-
-    function escapeHTML(str) {
-      if (!str) return '';
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
+      if (el) el.textContent = String(text || '');
     }
 
     function showToast(message, type = 'success') {
@@ -360,8 +356,15 @@
         isSuccess ? 'bg-brand-900/90 border-brand-500 text-brand-200' : 'bg-amber-900/90 border-amber-500 text-amber-200'
       }`;
 
-      toast.innerHTML = `<i data-lucide="${isSuccess ? 'check-circle' : 'alert-circle'}" class="w-4 h-4"></i> <span></span>`;
-      toast.querySelector('span').textContent = message;
+      const icon = document.createElement('i');
+      icon.setAttribute('data-lucide', isSuccess ? 'check-circle' : 'alert-circle');
+      icon.className = 'w-4 h-4';
+
+      const textSpan = document.createElement('span');
+      textSpan.textContent = message;
+
+      toast.appendChild(icon);
+      toast.appendChild(textSpan);
       container.appendChild(toast);
       lucide.createIcons();
 
@@ -409,7 +412,7 @@
         }
         return fullText;
       } catch (err) {
-        showToast(`PDF protegido ou inválido: ${file.name}`, 'error');
+        showToast(`PDF protegido ou malformado: ${file.name}`, 'error');
         return '';
       }
     }
@@ -445,10 +448,11 @@
       e.target.value = '';
     });
 
+    // Sanitização e Extração Estrita de ID do YouTube (SSRF Protection)
     function extractYouTubeId(url) {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url ? url.match(regExp) : null;
-      return (match && match[2].length === 11) ? match[2] : null;
+      if (!url || typeof url !== 'string') return null;
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      return (match && match[1]) ? match[1] : null;
     }
 
     async function generateLessonViaServerless(title, content, youtubeUrl) {
@@ -523,7 +527,7 @@
       const ytWrapper = document.getElementById('ytPlayerWrapper');
       const placeholder = document.getElementById('playerPlaceholder');
       if (ytId) {
-        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
+        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${encodeURIComponent(ytId)}?autoplay=1`;
         ytWrapper.classList.remove('hidden');
         placeholder.classList.add('hidden');
       } else {
@@ -555,15 +559,26 @@
       state.library.forEach((item, idx) => {
         const card = document.createElement('div');
         card.className = "p-3.5 bg-slate-900 border border-slate-700/70 hover:border-brand-500 rounded-xl transition flex justify-between items-center cursor-pointer";
-        card.innerHTML = `
-          <div>
-            <h4 class="font-bold text-sm text-slate-100">${escapeHTML(item.title)}</h4>
-            <p class="text-[11px] text-slate-400 mt-0.5">${item.steps ? item.steps.length : 0} tópicos</p>
-          </div>
-          <button class="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-semibold flex items-center gap-1">
-            <span>Carregar</span> <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-          </button>
-        `;
+
+        const textDiv = document.createElement('div');
+        const h4 = document.createElement('h4');
+        h4.className = "font-bold text-sm text-slate-100";
+        h4.textContent = item.title;
+
+        const p = document.createElement('p');
+        p.className = "text-[11px] text-slate-400 mt-0.5";
+        p.textContent = `${item.steps ? item.steps.length : 0} tópicos`;
+
+        textDiv.appendChild(h4);
+        textDiv.appendChild(p);
+
+        const btn = document.createElement('button');
+        btn.className = "px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-semibold flex items-center gap-1";
+        btn.innerHTML = `<span>Carregar</span> <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>`;
+
+        card.appendChild(textDiv);
+        card.appendChild(btn);
+
         card.addEventListener('click', () => {
           loadLessonFromLibrary(idx);
           document.getElementById('libraryModal').classList.add('hidden');
@@ -590,7 +605,7 @@
       const ytWrapper = document.getElementById('ytPlayerWrapper');
       const placeholder = document.getElementById('playerPlaceholder');
       if (lesson.youtubeId) {
-        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${lesson.youtubeId}?autoplay=1`;
+        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${encodeURIComponent(lesson.youtubeId)}?autoplay=1`;
         ytWrapper.classList.remove('hidden');
         placeholder.classList.add('hidden');
       } else {
@@ -665,10 +680,17 @@
             : 'border-slate-700/80 bg-slate-900/70 hover:bg-slate-800 text-sm font-medium'
         }`;
 
-        btn.innerHTML = `
-          <span class="w-6 h-6 rounded-lg bg-slate-800 border border-slate-600 flex items-center justify-center text-xs font-bold shrink-0 text-slate-300 mt-0.5">${idx + 1}</span>
-          <span class="text-slate-200 leading-normal flex-1">${escapeHTML(optionText)}</span>
-        `;
+        const numSpan = document.createElement('span');
+        numSpan.className = "w-6 h-6 rounded-lg bg-slate-800 border border-slate-600 flex items-center justify-center text-xs font-bold shrink-0 text-slate-300 mt-0.5";
+        numSpan.textContent = idx + 1;
+
+        const textSpan = document.createElement('span');
+        textSpan.className = "text-slate-200 leading-normal flex-1";
+        textSpan.textContent = optionText;
+
+        btn.appendChild(numSpan);
+        btn.appendChild(textSpan);
+
         btn.addEventListener('click', () => handleOptionSelect(idx, step.correct, step.explanation));
         optionsGrid.appendChild(btn);
       });
@@ -687,20 +709,34 @@
 
       const feedbackBox = document.getElementById('feedbackBox');
       feedbackBox.classList.remove('hidden');
+      feedbackBox.innerHTML = '';
+
+      const titleDiv = document.createElement('div');
+      titleDiv.className = "font-bold mb-1 flex items-center gap-2";
+
+      const expDiv = document.createElement('div');
+      expDiv.textContent = explanation;
 
       if (selectedIndex === correctIndex) {
         playSound('success');
         state.xp += 50;
         state.streak += 1;
         feedbackBox.className = "mt-4 p-4 rounded-xl border border-brand-500/40 bg-brand-900/30 text-brand-300 text-sm break-words";
-        feedbackBox.innerHTML = `<div class="font-bold mb-1 flex items-center gap-2 text-brand-400"><i data-lucide="sparkles" class="w-4 h-4"></i> Resposta Correta! (+50 XP)</div><div>${escapeHTML(explanation)}</div>`;
+        
+        titleDiv.className += " text-brand-400";
+        titleDiv.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Resposta Correta! (+50 XP)`;
         showToast("Resposta Correta! +50 XP", "success");
       } else {
         playSound('error');
         state.streak = 0;
         feedbackBox.className = "mt-4 p-4 rounded-xl border border-amber-500/40 bg-amber-900/30 text-amber-300 text-sm break-words";
-        feedbackBox.innerHTML = `<div class="font-bold mb-1 flex items-center gap-2 text-amber-400"><i data-lucide="lightbulb" class="w-4 h-4"></i> Conceito para Aprendizado</div><div>${escapeHTML(explanation)}</div>`;
+        
+        titleDiv.className += " text-amber-400";
+        titleDiv.innerHTML = `<i data-lucide="lightbulb" class="w-4 h-4"></i> Conceito para Aprendizado`;
       }
+
+      feedbackBox.appendChild(titleDiv);
+      feedbackBox.appendChild(expDiv);
 
       safeSetText('xpCount', `${state.xp} XP`);
       safeSetText('streakCount', `${state.streak} Sequência`);
@@ -725,18 +761,22 @@
       document.getElementById('lifeModuleCard').classList.add('hidden');
       safeSetText('stepIndicator', 'Simulado Finalizado!');
       
-      document.getElementById('questionText').innerHTML = `
-        <div class="text-center py-6 space-y-4">
-          <div class="w-16 h-16 rounded-2xl bg-brand-500/20 border border-brand-500 flex items-center justify-center text-brand-400 mx-auto animate-bounce">
-            <i data-lucide="award" class="w-8 h-8"></i>
-          </div>
-          <h2 class="text-2xl font-bold text-brand-400">Resultado do Simulado</h2>
-          <p class="text-sm text-slate-300 max-w-md mx-auto">Você acertou <strong>${correctCount} de ${total}</strong> questões (${scorePercentage}% de aproveitamento).</p>
-          <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-400 font-mono font-bold text-lg">
-            Bônus Ganho: +${earnedXp} XP ⚡
-          </div>
+      const qText = document.getElementById('questionText');
+      qText.innerHTML = '';
+      
+      const resContainer = document.createElement('div');
+      resContainer.className = "text-center py-6 space-y-4";
+      resContainer.innerHTML = `
+        <div class="w-16 h-16 rounded-2xl bg-brand-500/20 border border-brand-500 flex items-center justify-center text-brand-400 mx-auto animate-bounce">
+          <i data-lucide="award" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-brand-400">Resultado do Simulado</h2>
+        <p class="text-sm text-slate-300 max-w-md mx-auto">Você acertou <strong>${correctCount} de ${total}</strong> questões (${scorePercentage}% de aproveitamento).</p>
+        <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-400 font-mono font-bold text-lg">
+          Bônus Ganho: +${earnedXp} XP ⚡
         </div>
       `;
+      qText.appendChild(resContainer);
 
       document.getElementById('optionsGrid').innerHTML = '';
       document.getElementById('feedbackBox').classList.add('hidden');
@@ -752,18 +792,23 @@
       document.getElementById('summaryCard').classList.add('hidden');
       document.getElementById('lifeModuleCard').classList.add('hidden');
       safeSetText('stepIndicator', 'Módulo Concluído!');
-      document.getElementById('questionText').innerHTML = `
-        <div class="text-center py-6 space-y-4">
-          <div class="w-16 h-16 rounded-2xl bg-brand-500/20 border border-brand-500 flex items-center justify-center text-brand-400 mx-auto animate-bounce">
-            <i data-lucide="trophy" class="w-8 h-8"></i>
-          </div>
-          <h2 class="text-2xl font-bold text-brand-400">Parabéns! Módulo Concluído!</h2>
-          <p class="text-sm text-slate-300 max-w-md mx-auto">Você completou todos os tópicos de <strong>${escapeHTML(state.currentLesson.title)}</strong>!</p>
-          <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-400 font-mono font-bold text-lg">
-            Total Ganho: +${state.currentLesson.steps.length * 50} XP
-          </div>
+      
+      const qText = document.getElementById('questionText');
+      qText.innerHTML = '';
+
+      const resContainer = document.createElement('div');
+      resContainer.className = "text-center py-6 space-y-4";
+      resContainer.innerHTML = `
+        <div class="w-16 h-16 rounded-2xl bg-brand-500/20 border border-brand-500 flex items-center justify-center text-brand-400 mx-auto animate-bounce">
+          <i data-lucide="trophy" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-brand-400">Parabéns! Módulo Concluído!</h2>
+        <p class="text-sm text-slate-300 max-w-md mx-auto">Você completou todos os tópicos com sucesso!</p>
+        <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-400 font-mono font-bold text-lg">
+          Total Ganho: +${state.currentLesson.steps.length * 50} XP
         </div>
       `;
+      qText.appendChild(resContainer);
 
       document.getElementById('optionsGrid').innerHTML = '';
       document.getElementById('feedbackBox').classList.add('hidden');
