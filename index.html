@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +7,11 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons (Ícones Vetoriais Modernos) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Extrator Oficial PDF.js do Mozilla -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -25,6 +28,7 @@
 
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -37,13 +41,14 @@
               900: '#14532d',
             },
             dark: {
-              base: '#0f172a',
-              surface: '#1e293b',
+              base: '#090d16',
+              surface: '#111827',
+              card: '#1e293b',
               border: '#334155',
             }
           },
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
           }
         }
@@ -52,53 +57,71 @@
   </script>
   
   <style>
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #090d16; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .glow-effect {
+      box-shadow: 0 0 20px -5px rgba(34, 197, 94, 0.3);
+    }
   </style>
 </head>
 <body class="bg-dark-base text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-slate-900">
 
-  <!-- Header Superior com Autenticação do Usuário -->
-  <header class="border-b border-dark-border bg-dark-surface/80 backdrop-blur sticky top-0 z-50">
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-20 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Header Superior estilo Glassmorphism -->
+  <header class="border-b border-white/10 glass-panel sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-brand-500/20 border border-brand-500 flex items-center justify-center text-brand-500 font-bold text-xl">
-          ⚡
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 p-0.5 shadow-lg shadow-brand-500/20">
+          <div class="w-full h-full bg-dark-base rounded-[10px] flex items-center justify-center text-brand-500">
+            <i data-lucide="zap" class="w-5 h-5 fill-brand-500"></i>
+          </div>
         </div>
         <div>
-          <h1 class="font-bold text-lg leading-none text-white tracking-wide">OmniFocus Studio</h1>
-          <p class="text-xs text-slate-400 mt-0.5">Vídeos Interativos, Simulações & Aprendizagem Multidisciplinar</p>
+          <h1 class="font-bold text-lg leading-none text-white tracking-wide flex items-center gap-2">
+            OmniFocus Studio <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/30">Pro v2.0</span>
+          </h1>
+          <p class="text-xs text-slate-400 mt-0.5">Plataforma Gamificada de Aprendizagem Interativa</p>
         </div>
       </div>
 
       <!-- Placar e Botões de Ação -->
       <div class="flex items-center gap-3 text-sm font-semibold">
-        <div id="timerBadge" class="hidden items-center gap-2 bg-amber-500/10 border border-amber-500/40 px-3 py-1.5 rounded-lg text-amber-400 font-mono font-bold animate-pulse">
-          ⏱️ <span id="timerDisplay">10:00</span>
+        <div id="timerBadge" class="hidden items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl text-amber-400 font-mono font-bold animate-pulse">
+          <i data-lucide="timer" class="w-4 h-4"></i> <span id="timerDisplay">10:00</span>
         </div>
 
-        <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-          <span class="text-yellow-400">🔥</span>
+        <div class="flex items-center gap-2 bg-slate-800/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60 shadow-sm">
+          <i data-lucide="flame" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
           <span id="streakCount" class="text-slate-200">0 Sequência</span>
         </div>
-        <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-          <span class="text-brand-500">⭐</span>
-          <span id="xpCount" class="text-brand-500 font-mono">0 XP</span>
+        
+        <div class="flex items-center gap-2 bg-slate-800/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60 shadow-sm">
+          <i data-lucide="star" class="w-4 h-4 text-brand-500 fill-brand-500"></i>
+          <span id="xpCount" class="text-brand-400 font-mono font-bold">0 XP</span>
         </div>
 
-        <button id="btnExportPDF" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition">
-          📄 Relatório PDF
+        <button id="btnExportPDF" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition active:scale-95">
+          <i data-lucide="file-text" class="w-4 h-4"></i> Relatório PDF
         </button>
 
-        <button id="btnOpenLibrary" class="px-3.5 py-1.5 rounded-lg bg-brand-600/20 hover:bg-brand-600/30 border border-brand-500/40 text-brand-400 text-xs font-semibold flex items-center gap-2 transition">
-          <span>📚</span>
-          <span>Minhas Aulas (<span id="libraryCount">0</span>)</span>
+        <button id="btnOpenLibrary" class="px-3.5 py-1.5 rounded-xl bg-brand-600/15 hover:bg-brand-600/25 border border-brand-500/30 text-brand-400 text-xs font-semibold flex items-center gap-2 transition active:scale-95">
+          <i data-lucide="book-open" class="w-4 h-4"></i> Minhas Aulas (<span id="libraryCount">0</span>)
         </button>
 
-        <button id="btnOpenAuth" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition">
-          <span id="userAvatar">☁️️</span>
+        <button id="btnOpenAuth" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition active:scale-95">
+          <i data-lucide="cloud" class="w-4 h-4 text-sky-400"></i>
           <span id="userNameLabel">Conectar Nuvem</span>
         </button>
       </div>
@@ -106,40 +129,44 @@
   </header>
 
   <!-- Modal de Opções de Login Multi-Nuvem -->
-  <div id="authModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-dark-surface border border-dark-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-      <h3 class="text-xl font-bold text-white mb-1">Sincronização em Nuvem</h3>
+  <div id="authModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-md w-full p-6 shadow-2xl relative border border-slate-700">
+      <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
+        <i data-lucide="cloud-lightning" class="w-5 h-5 text-brand-500"></i> Sincronização em Nuvem
+      </h3>
       <p class="text-xs text-slate-400 mb-5">Escolha o seu provedor de preferência para sincronizar progresso, XP e módulos privados.</p>
       
       <div class="space-y-3">
-        <!-- Google Drive Sync -->
-        <button id="btnLoginGoogle" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
+        <button id="btnLoginGoogle" class="w-full bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
           <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.26v3.15C3.25 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.26C.46 8.23 0 10.06 0 12s.46 3.77 1.26 5.39l4.02-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.26 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/></svg>
           Google Drive Sync (Automático)
         </button>
 
-        <!-- GitHub Sync (Gist Privado) -->
-        <button id="btnLoginGithub" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
-          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        <button id="btnLoginGithub" class="w-full bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
+          <i data-lucide="github" class="w-5 h-5"></i>
           GitHub Sync (Token/Gist)
         </button>
       </div>
       
       <div class="mt-6 flex justify-end">
-        <button id="btnCloseAuth" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">Fechar</button>
+        <button id="btnCloseAuth" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">Fechar</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal / Gaveta de Biblioteca de Aulas Salvas -->
-  <div id="libraryModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-dark-surface border border-dark-border rounded-2xl max-w-lg w-full p-6 shadow-2xl relative flex flex-col max-h-[80vh]">
-      <div class="flex justify-between items-center pb-4 border-b border-dark-border mb-4">
+  <!-- Modal de Biblioteca -->
+  <div id="libraryModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-lg w-full p-6 shadow-2xl relative flex flex-col max-h-[80vh] border border-slate-700">
+      <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
         <div>
-          <h3 class="text-xl font-bold text-white">Minhas Aulas Salvas</h3>
+          <h3 class="text-xl font-bold text-white flex items-center gap-2">
+            <i data-lucide="library" class="w-5 h-5 text-brand-500"></i> Minhas Aulas Salvas
+          </h3>
           <p class="text-xs text-slate-400">Acesse seus módulos criados anteriormente sem precisar refazer uploads.</p>
         </div>
-        <button id="btnCloseLibrary" class="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+        <button id="btnCloseLibrary" class="text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
       </div>
 
       <div id="libraryList" class="flex-1 overflow-y-auto space-y-3 pr-1">
@@ -148,14 +175,14 @@
     </div>
   </div>
 
-  <!-- Main Content Area -->
+  <!-- Área Principal -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
     
-    <!-- Painel Lateral: Gerador de Aula -->
-    <section class="lg:col-span-5 bg-dark-surface border border-dark-border rounded-2xl p-5 flex flex-col gap-5">
+    <!-- Painel Lateral: Criador de Aulas -->
+    <section class="lg:col-span-5 glass-panel rounded-2xl p-5 flex flex-col gap-5 border border-slate-800/80 shadow-xl">
       <div>
         <h2 class="text-lg font-bold text-white flex items-center gap-2">
-          <span>⚙️</span> Criar Nova Aula Interativa
+          <i data-lucide="sparkles" class="w-5 h-5 text-brand-500"></i> Criar Nova Aula Interativa
         </h2>
         <p class="text-xs text-slate-400 mt-1">Combine PDFs, links do YouTube e escolha seu formato de aprendizagem.</p>
       </div>
@@ -163,104 +190,112 @@
       <form id="createLessonForm" class="flex flex-col gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Título / Matéria</label>
-          <input type="text" id="lessonTitle" placeholder="Ex: Fundamentos de Redes de Computadores" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none">
+          <input type="text" id="lessonTitle" placeholder="Ex: Fundamentos de Redes de Computadores" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none transition">
         </div>
 
-        <!-- Seletor de Modo de Aprendizagem Completo -->
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Modo de Aprendizagem</label>
-          <select id="learningMode" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none font-semibold">
+          <select id="learningMode" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none font-semibold">
             <option value="video">🎬 Módulo Vídeo Interativo (Player + Pausas com Questões)</option>
-            <option value="exam">⏱️️ Modo Simulado / Exame (Cronômetro + Nota Final + Bônus XP)</option>
+            <option value="exam">⏱️ Modo Simulado / Exame (Cronômetro + Nota Final + Bônus XP)</option>
             <option value="study">📖 Modo Estudo (Sem Cronômetro + Feedback Instantâneo)</option>
           </select>
         </div>
 
-        <!-- Input de Vídeo do YouTube -->
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Link do Vídeo do YouTube (Opcional / Módulo Vídeo)</label>
-          <input type="url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Link do Vídeo do YouTube (Opcional)</label>
+          <input type="url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none transition">
         </div>
 
-        <!-- Upload de Arquivos -->
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Upload de Materiais (PDFs, TXT, MD)</label>
-          <div class="relative border-2 border-dashed border-slate-700 hover:border-brand-500 rounded-xl p-4 text-center cursor-pointer transition bg-slate-900/50">
+          <div class="relative border-2 border-dashed border-slate-700 hover:border-brand-500 rounded-2xl p-4 text-center cursor-pointer transition bg-slate-900/40 hover:bg-slate-900/60 group">
             <input type="file" id="fileInput" multiple accept=".pdf,.txt,.md,.json,.csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-            <div id="fileUploadLabel" class="text-xs text-slate-400 flex flex-col items-center gap-1">
-              <span class="text-2xl" id="uploadIcon">📁</span>
-              <span id="uploadText" class="font-medium">Clique ou arraste seus PDFs aqui</span>
+            <div id="fileUploadLabel" class="text-xs text-slate-400 flex flex-col items-center gap-1.5">
+              <i data-lucide="upload-cloud" class="w-7 h-7 text-slate-500 group-hover:text-brand-400 transition" id="uploadIcon"></i>
+              <span id="uploadText" class="font-semibold text-slate-300">Clique ou arraste seus PDFs aqui</span>
               <span class="text-[10px] text-slate-500">Extração nativa de páginas de PDF</span>
             </div>
           </div>
         </div>
 
-        <!-- Conteúdo em Texto -->
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Texto Extraído dos PDFs / Conteúdo</label>
-          <textarea id="lessonContent" rows="3" placeholder="O texto extraído dos seus PDFs aparecerá aqui para ser enviado à IA..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none resize-none font-mono text-xs"></textarea>
+          <textarea id="lessonContent" rows="3" placeholder="O texto extraído dos seus PDFs aparecerá aqui para ser enviado à IA..." class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none resize-none font-mono text-xs"></textarea>
         </div>
 
-        <button type="submit" id="btnGenerate" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-brand-900/20">
-          <span id="btnGenIcon">⚡</span> <span id="btnGenText">Gerar Módulo Gamificado com IA</span>
+        <button type="submit" id="btnGenerate" class="w-full bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg glow-effect active:scale-98">
+          <i data-lucide="cpu" class="w-5 h-5"></i>
+          <span id="btnGenText">Gerar Módulo Gamificado com IA</span>
         </button>
       </form>
     </section>
 
-    <!-- Painel Principal: Player e Interatividade -->
+    <!-- Painel Principal: Player e Arena -->
     <section class="lg:col-span-7 flex flex-col gap-6">
       
-      <!-- Container do Player de Vídeo Interativo & Resumos -->
-      <div id="playerContainer" class="bg-dark-surface border border-dark-border rounded-2xl p-5 min-h-[200px] flex flex-col justify-start relative">
-        <div id="playerPlaceholder" class="flex flex-col items-center justify-center gap-3 my-auto text-center py-8">
-          <span class="text-4xl opacity-40">🎮</span>
-          <p class="text-slate-400 text-sm">Crie um módulo ou selecione uma aula na biblioteca para iniciar.</p>
+      <!-- Container do Player de Vídeo e Slide -->
+      <div id="playerContainer" class="glass-panel rounded-2xl p-5 border border-slate-800/80 shadow-xl flex flex-col justify-start relative">
+        <div id="playerPlaceholder" class="flex flex-col items-center justify-center gap-3 my-auto text-center py-10">
+          <div class="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-500 mb-1">
+            <i data-lucide="clapperboard" class="w-8 h-8"></i>
+          </div>
+          <p class="text-slate-400 text-sm font-medium">Crie um módulo ou selecione uma aula na biblioteca para iniciar.</p>
         </div>
 
-        <!-- Player do YouTube Embutido -->
-        <div id="ytPlayerWrapper" class="hidden w-full aspect-video rounded-xl overflow-hidden border border-slate-700 mb-4 shrink-0 shadow-lg">
+        <!-- YouTube Player -->
+        <div id="ytPlayerWrapper" class="hidden w-full aspect-video rounded-xl overflow-hidden border border-slate-700/80 mb-4 shrink-0 shadow-2xl">
           <iframe id="ytIframe" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
 
-        <!-- Slide Animado com Controles de Áudio da Narração -->
+        <!-- Slide Explicativo -->
         <div id="summaryCard" class="hidden w-full text-left space-y-3 bg-slate-900/90 p-4 rounded-xl border border-slate-700/80 shadow-md">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span class="text-xs font-bold text-brand-500 uppercase tracking-wider flex items-center gap-1.5">
-              <span>💡</span> Slide Explicativo do Tópico
+            <span class="text-xs font-bold text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="lightbulb" class="w-4 h-4"></i> Slide Explicativo do Tópico
             </span>
-            <button id="btnTTS" class="px-3 py-1 rounded-lg bg-brand-600/20 hover:bg-brand-600/30 border border-brand-500/30 text-brand-400 text-xs font-semibold flex items-center gap-1.5 transition">
-              <span id="ttsIcon">🔊</span> <span id="ttsText">Ouvir Explicação</span>
+            <button id="btnTTS" class="px-3 py-1.5 rounded-lg bg-brand-600/20 hover:bg-brand-600/30 border border-brand-500/30 text-brand-400 text-xs font-semibold flex items-center gap-1.5 transition">
+              <i data-lucide="volume-2" class="w-4 h-4" id="ttsIcon"></i> <span id="ttsText">Ouvir Explicação</span>
             </button>
           </div>
-          <p id="summaryText" class="text-sm text-slate-200 leading-relaxed whitespace-pre-line break-words"></p>
+          <p id="summaryText" class="text-sm text-slate-200 leading-relaxed whitespace-pre-line break-words font-normal"></p>
         </div>
       </div>
 
-      <!-- Módulo de Vida (Aplicações Práticas no Mundo Real) -->
-      <div id="lifeModuleCard" class="hidden bg-slate-900/90 border border-brand-500/30 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
+      <!-- Módulo de Vida (Aplicações Práticas) -->
+      <div id="lifeModuleCard" class="hidden glass-panel border border-amber-500/30 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
           <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-            <span>🌱</span> Módulo de Vida — Desafio Prático
+            <i data-lucide="sprout" class="w-4 h-4"></i> Módulo de Vida — Desafio Prático
           </span>
-          <span class="text-[11px] bg-amber-500/10 text-amber-300 font-mono font-semibold px-2 py-0.5 rounded border border-amber-500/30">+100 XP Bônus</span>
+          <span class="text-[11px] bg-amber-500/10 text-amber-300 font-mono font-bold px-2.5 py-0.5 rounded-full border border-amber-500/30">+100 XP Bônus</span>
         </div>
         <p id="lifeTaskText" class="text-xs text-slate-300 leading-relaxed break-words"></p>
         <div class="flex justify-end">
-          <button id="btnCompleteLifeTask" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1.5">
-            <span>✅</span> Marcar como Concluído na Prática
+          <button id="btnCompleteLifeTask" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center gap-2 shadow-md active:scale-95">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Concluído na Prática
           </button>
         </div>
       </div>
 
-      <!-- Arena de Atividades Interativas Sincronizadas -->
-      <div id="interactiveArena" class="bg-dark-surface border border-dark-border rounded-2xl p-6 flex-1 flex flex-col justify-between overflow-y-auto max-h-[500px]">
+      <!-- Arena Interativa com Barra de Progresso -->
+      <div id="interactiveArena" class="glass-panel rounded-2xl p-6 border border-slate-800/80 shadow-xl flex-1 flex flex-col justify-between overflow-y-auto max-h-[500px]">
         <div id="arenaContent" class="space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-2">
-            <span class="text-xs font-semibold uppercase tracking-wider text-brand-500" id="currentTopicCategory">Status do Módulo</span>
-            <span class="text-xs font-mono text-slate-400" id="stepIndicator">Etapa 0 / 0</span>
+          
+          <!-- Barra de Progresso do Módulo -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold uppercase tracking-wider text-brand-400 flex items-center gap-1.5" id="currentTopicCategory">
+                <i data-lucide="target" class="w-4 h-4"></i> Status do Módulo
+              </span>
+              <span class="font-mono text-slate-400" id="stepIndicator">Etapa 0 / 0</span>
+            </div>
+            <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/60">
+              <div id="progressBar" class="h-full bg-gradient-to-r from-brand-600 to-emerald-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
           </div>
 
-          <div id="questionContainer" class="space-y-4">
+          <div id="questionContainer" class="space-y-4 pt-2">
             <h3 id="questionText" class="text-base md:text-lg font-semibold text-white leading-relaxed break-words">
               Aguardando início do módulo...
             </h3>
@@ -274,13 +309,13 @@
           </div>
         </div>
 
-        <!-- Ações do Player de Estudo -->
-        <div class="flex justify-between items-center pt-5 border-t border-slate-700/60 mt-4 shrink-0">
-          <button id="btnPrevStep" disabled class="px-4 py-2 rounded-lg bg-slate-800 text-slate-400 text-xs font-semibold hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed">
-            ← Anterior
+        <!-- Botões do Player -->
+        <div class="flex justify-between items-center pt-5 border-t border-slate-800 mt-4 shrink-0">
+          <button id="btnPrevStep" disabled class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-400 text-xs font-semibold hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Anterior
           </button>
-          <button id="btnNextStep" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition flex items-center gap-2 shadow-md shadow-brand-900/30">
-            Avançar Tópico →
+          <button id="btnNextStep" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white text-xs font-bold transition flex items-center gap-2 shadow-md active:scale-95">
+            <span>Avançar Tópico</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </button>
         </div>
       </div>
@@ -290,7 +325,10 @@
   </main>
 
   <script>
-    // Configuração dos Client IDs
+    // Inicialização dos Ícones Lucide
+    lucide.createIcons();
+
+    // Configuração de IDs
     const GOOGLE_CLIENT_ID = '19530400764-jesfucnmgr9l4uh32etfluould2huqus.apps.googleusercontent.com';
     const GITHUB_CLIENT_ID = 'Ov23li4HjupSzZYJlw80';
     
@@ -299,9 +337,9 @@
       streak: 0,
       currentStep: 0,
       currentLesson: null,
-      mode: 'video', // 'video', 'study' ou 'exam'
+      mode: 'video',
       examAnswers: [],
-      completedLifeTasks: {}, // Rastreador das missões práticas concluídas
+      completedLifeTasks: {},
       timerInterval: null,
       timeLeft: 600,
       library: JSON.parse(localStorage.getItem('omni_lessons_library')) || [],
@@ -322,6 +360,24 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const isSuccess = type === 'success';
+      toast.className = `p-3.5 rounded-xl border text-xs font-semibold shadow-2xl backdrop-blur-md flex items-center gap-2.5 animate-bounce transition-all ${
+        isSuccess ? 'bg-brand-900/90 border-brand-500 text-brand-200' : 'bg-amber-900/90 border-amber-500 text-amber-200'
+      }`;
+
+      toast.innerHTML = `<i data-lucide="${isSuccess ? 'check-circle' : 'alert-circle'}" class="w-4 h-4"></i> ${message}`;
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.remove();
+      }, 3500);
     }
 
     function playSound(type) {
@@ -350,7 +406,7 @@
       } catch (e) {}
     }
 
-    // Exportador de Relatório PDF
+    // Exportador em PDF
     document.getElementById('btnExportPDF').addEventListener('click', () => {
       const container = document.createElement('div');
       container.style.padding = '30px';
@@ -401,7 +457,7 @@
       html2pdf().set(opt).from(container).save();
     });
 
-    // Módulo de Vida — Conclusão de Ação Prática com Persistência
+    // Módulo de Vida
     document.getElementById('btnCompleteLifeTask').addEventListener('click', () => {
       playSound('success');
       state.xp += 100;
@@ -412,13 +468,15 @@
       
       const btn = document.getElementById('btnCompleteLifeTask');
       btn.disabled = true;
-      btn.className = "px-3.5 py-1.5 rounded-lg bg-slate-800 text-brand-400 font-bold text-xs cursor-default";
-      btn.innerHTML = `<span>✨</span> Desafio de Vida Concluído (+100 XP)`;
+      btn.className = "px-4 py-2 rounded-xl bg-slate-800 text-brand-400 font-bold text-xs cursor-default flex items-center gap-2";
+      btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Desafio de Vida Concluído (+100 XP)`;
 
+      showToast("Desafio de Vida Concluído! +100 XP", "success");
       saveProgressToDrive();
+      lucide.createIcons();
     });
 
-    // Cronômetro do Modo Simulado
+    // Cronômetro
     function startExamTimer() {
       stopExamTimer();
       state.timeLeft = (state.currentLesson && state.currentLesson.steps) ? state.currentLesson.steps.length * 120 : 600;
@@ -450,7 +508,7 @@
       document.getElementById('timerDisplay').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    // Gerenciador de Biblioteca
+    // Biblioteca
     function saveLessonToLibrary(lesson) {
       const existingIdx = state.library.findIndex(l => l.title.toLowerCase() === lesson.title.toLowerCase());
       if (existingIdx >= 0) {
@@ -478,14 +536,14 @@
       listContainer.innerHTML = '';
       state.library.forEach((item, idx) => {
         const card = document.createElement('div');
-        card.className = "p-3.5 bg-slate-900 border border-slate-700 hover:border-brand-500 rounded-xl transition flex justify-between items-center group cursor-pointer";
+        card.className = "p-3.5 bg-slate-900 border border-slate-700/70 hover:border-brand-500 rounded-xl transition flex justify-between items-center group cursor-pointer";
         card.innerHTML = `
           <div>
             <h4 class="font-bold text-sm text-slate-100 group-hover:text-brand-400 transition">${escapeHTML(item.title)}</h4>
             <p class="text-[11px] text-slate-400 mt-0.5">${item.steps ? item.steps.length : 0} tópicos • Salvo localmente / Nuvem</p>
           </div>
-          <button class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition">
-            Carregar ➔
+          <button class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition flex items-center gap-1">
+            <span>Carregar</span> <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
           </button>
         `;
 
@@ -496,6 +554,7 @@
 
         listContainer.appendChild(card);
       });
+      lucide.createIcons();
     }
 
     function loadLessonFromLibrary(index) {
@@ -527,7 +586,7 @@
       }
     }
 
-    // Modais e Auxiliares
+    // Auxiliares
     document.getElementById('btnOpenLibrary').addEventListener('click', () => {
       updateLibraryUI();
       document.getElementById('libraryModal').classList.remove('hidden');
@@ -543,7 +602,7 @@
       document.getElementById('authModal').classList.add('hidden');
     });
 
-    // Narração por Voz
+    // TTS
     function toggleSpeech(text) {
       if (!('speechSynthesis' in window)) {
         alert("A narração de voz não é suportada neste navegador.");
@@ -556,8 +615,9 @@
       if (state.isSpeaking) {
         window.speechSynthesis.cancel();
         state.isSpeaking = false;
-        ttsIcon.textContent = '🔊';
+        ttsIcon.setAttribute('data-lucide', 'volume-2');
         ttsText.textContent = 'Ouvir Explicação';
+        lucide.createIcons();
         return;
       }
 
@@ -568,20 +628,23 @@
 
       utterance.onstart = () => {
         state.isSpeaking = true;
-        ttsIcon.textContent = '⏸';
+        ttsIcon.setAttribute('data-lucide', 'pause');
         ttsText.textContent = 'Pausar Narração';
+        lucide.createIcons();
       };
 
       utterance.onend = () => {
         state.isSpeaking = false;
-        ttsIcon.textContent = '🔊';
+        ttsIcon.setAttribute('data-lucide', 'volume-2');
         ttsText.textContent = 'Ouvir Explicação';
+        lucide.createIcons();
       };
 
       utterance.onerror = () => {
         state.isSpeaking = false;
-        ttsIcon.textContent = '🔊';
+        ttsIcon.setAttribute('data-lucide', 'volume-2');
         ttsText.textContent = 'Ouvir Explicação';
+        lucide.createIcons();
       };
 
       state.speechUtterance = utterance;
@@ -598,12 +661,11 @@
     function updateUserProfileUI() {
       if (state.user) {
         document.getElementById('userNameLabel').textContent = state.user.name || 'Conectado';
-        document.getElementById('userAvatar').textContent = '☁️';
       }
     }
     updateUserProfileUI();
 
-    // Sincronização Google Drive
+    // Drive Sync
     let tokenClient;
 
     function initGoogleDriveAuth() {
@@ -634,7 +696,6 @@
       }
     });
 
-    // Sincronização GitHub
     document.getElementById('btnLoginGithub').addEventListener('click', () => {
       const token = prompt("Insira seu GitHub Personal Access Token (com escopo 'gist') para sincronizar:");
       if (!token) return;
@@ -645,7 +706,7 @@
       localStorage.setItem('omni_user_profile', JSON.stringify(state.user));
       updateUserProfileUI();
       document.getElementById('authModal').classList.add('hidden');
-      alert("Conectado à nuvem do GitHub com sucesso!");
+      showToast("Conectado ao GitHub Sync!", "success");
     });
 
     async function saveProgressToDrive() {
@@ -726,7 +787,7 @@
       setTimeout(initGoogleDriveAuth, 1000);
     };
 
-    // PDF.js Extração com Tratamento Robusto de Exceções
+    // PDF.js
     async function extractPdfText(file) {
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -755,10 +816,8 @@
       if (!files.length) return;
 
       const uploadText = document.getElementById('uploadText');
-      const uploadIcon = document.getElementById('uploadIcon');
       const textArea = document.getElementById('lessonContent');
 
-      uploadIcon.textContent = '⏳';
       uploadText.textContent = `Lendo e extraindo texto de ${files.length} PDF(s)...`;
 
       let aggregatedText = "";
@@ -779,8 +838,8 @@
       }
 
       textArea.value += aggregatedText;
-      uploadIcon.textContent = '✅';
       uploadText.textContent = `${files.length} arquivo(s) extraídos com sucesso!`;
+      showToast(`${files.length} arquivo(s) extraídos!`, "success");
       e.target.value = '';
     });
 
@@ -790,7 +849,7 @@
       return (match && match[2].length === 11) ? match[2] : null;
     }
 
-    // Chamada à API Serverless Vercel
+    // API Serverless
     async function generateLessonViaServerless(title, content, youtubeUrl) {
       try {
         const response = await fetch(state.apiServerlessUrl, {
@@ -828,7 +887,7 @@
       return { steps };
     }
 
-    // Submissão do Formulário
+    // Form Submit
     document.getElementById('createLessonForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
@@ -845,9 +904,7 @@
         return;
       }
 
-      const btnGenIcon = document.getElementById('btnGenIcon');
       const btnGenText = document.getElementById('btnGenText');
-      btnGenIcon.textContent = '⚙️';
       btnGenText.textContent = 'IA criando Módulo Gamificado...';
 
       const ytId = extractYouTubeId(ytUrl);
@@ -874,9 +931,9 @@
           }
 
           renderCurrentStep();
+          showToast("Módulo criado com sucesso!", "success");
         }
       } finally {
-        btnGenIcon.textContent = '⚡';
         btnGenText.textContent = 'Gerar Módulo Gamificado com IA';
       }
 
@@ -895,12 +952,14 @@
     function renderCurrentStep() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       state.isSpeaking = false;
-      document.getElementById('ttsIcon').textContent = '🔊';
-      document.getElementById('ttsText').textContent = 'Ouvir Explicação';
 
       if (!state.currentLesson || !state.currentLesson.steps.length) return;
 
       const totalSteps = state.currentLesson.steps.length;
+
+      // Atualiza a Barra de Progresso
+      const progressPercent = Math.round(((state.currentStep + 1) / totalSteps) * 100);
+      document.getElementById('progressBar').style.width = `${progressPercent}%`;
 
       if (state.currentStep >= totalSteps) {
         if (state.mode === 'exam') {
@@ -935,7 +994,7 @@
         summaryCard.classList.add('hidden');
       }
 
-      // Módulo de Vida - Verificação de Estado Concluído
+      // Estado Módulo de Vida
       const lifeKey = `${state.currentLesson.title}_step_${state.currentStep}`;
       const isLifeCompleted = state.completedLifeTasks[lifeKey];
 
@@ -946,12 +1005,12 @@
         const btn = document.getElementById('btnCompleteLifeTask');
         if (isLifeCompleted) {
           btn.disabled = true;
-          btn.className = "px-3.5 py-1.5 rounded-lg bg-slate-800 text-brand-400 font-bold text-xs cursor-default";
-          btn.innerHTML = `<span>✨</span> Desafio de Vida Concluído (+100 XP)`;
+          btn.className = "px-4 py-2 rounded-xl bg-slate-800 text-brand-400 font-bold text-xs cursor-default flex items-center gap-2";
+          btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Desafio de Vida Concluído (+100 XP)`;
         } else {
           btn.disabled = false;
-          btn.className = "px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1.5";
-          btn.innerHTML = `<span>✅</span> Marcar como Concluído na Prática`;
+          btn.className = "px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center gap-2 shadow-md active:scale-95";
+          btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Concluído na Prática`;
         }
       } else {
         lifeModuleCard.classList.add('hidden');
@@ -967,10 +1026,10 @@
         const btn = document.createElement('button');
         const isSelectedInExam = (state.mode === 'exam' && state.examAnswers[state.currentStep] === idx);
 
-        btn.className = `w-full text-left p-3.5 rounded-xl border transition flex items-start gap-3 break-words ${
+        btn.className = `w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-start gap-3.5 break-words hover:scale-[1.01] ${
           isSelectedInExam 
-            ? 'border-brand-500 bg-brand-900/30 text-white font-bold' 
-            : 'border-slate-700 bg-slate-900/80 hover:bg-slate-800 hover:border-slate-600 text-sm font-medium'
+            ? 'border-brand-500 bg-brand-900/40 text-white font-bold shadow-lg shadow-brand-500/10' 
+            : 'border-slate-700/80 bg-slate-900/70 hover:bg-slate-800 hover:border-slate-600 text-sm font-medium'
         }`;
 
         btn.innerHTML = `
@@ -983,7 +1042,8 @@
       });
 
       document.getElementById('btnPrevStep').disabled = state.currentStep === 0;
-      document.getElementById('btnNextStep').textContent = (state.currentStep === totalSteps - 1) ? (state.mode === 'exam' ? 'Entregar Simulado 📝' : 'Concluir Módulo 🏆') : 'Avançar Tópico →';
+      document.getElementById('btnNextStep').querySelector('span').textContent = (state.currentStep === totalSteps - 1) ? (state.mode === 'exam' ? 'Entregar Simulado' : 'Concluir Módulo') : 'Avançar Tópico';
+      lucide.createIcons();
     }
 
     function handleOptionSelect(selectedIndex, correctIndex, explanation) {
@@ -1004,21 +1064,22 @@
         state.xp += 50;
         state.streak += 1;
 
-        feedbackBox.className = "mt-4 p-4 rounded-xl border border-brand-500/40 bg-brand-900/20 text-brand-300 text-sm break-words";
+        feedbackBox.className = "mt-4 p-4 rounded-xl border border-brand-500/40 bg-brand-900/30 text-brand-300 text-sm break-words shadow-lg shadow-brand-500/10";
         feedbackBox.innerHTML = `
-          <div class="font-bold mb-1 flex items-center gap-2">
-            <span>✨ Resposta Correta! (+50 XP)</span>
+          <div class="font-bold mb-1 flex items-center gap-2 text-brand-400">
+            <i data-lucide="sparkles" class="w-4 h-4"></i> Resposta Correta! (+50 XP)
           </div>
           <div>${escapeHTML(explanation)}</div>
         `;
+        showToast("Resposta Correta! +50 XP", "success");
       } else {
         playSound('error');
         state.streak = 0;
 
-        feedbackBox.className = "mt-4 p-4 rounded-xl border border-amber-500/40 bg-amber-900/20 text-amber-300 text-sm break-words";
+        feedbackBox.className = "mt-4 p-4 rounded-xl border border-amber-500/40 bg-amber-900/30 text-amber-300 text-sm break-words";
         feedbackBox.innerHTML = `
-          <div class="font-bold mb-1 flex items-center gap-2">
-            <span>💡 Conceito para Aprendizado</span>
+          <div class="font-bold mb-1 flex items-center gap-2 text-amber-400">
+            <i data-lucide="lightbulb" class="w-4 h-4"></i> Conceito para Aprendizado
           </div>
           <div>${escapeHTML(explanation)}</div>
         `;
@@ -1028,6 +1089,7 @@
       document.getElementById('streakCount').textContent = `${state.streak} Sequência`;
 
       saveProgressToDrive();
+      lucide.createIcons();
     }
 
     function finishExamModule() {
@@ -1053,10 +1115,12 @@
       
       document.getElementById('questionText').innerHTML = `
         <div class="text-center py-6 space-y-4">
-          <div class="text-5xl animate-bounce">📊</div>
-          <h2 class="text-2xl font-bold text-brand-500">Resultado do Simulado</h2>
+          <div class="w-16 h-16 rounded-2xl bg-brand-500/20 border border-brand-500 flex items-center justify-center text-brand-400 mx-auto animate-bounce">
+            <i data-lucide="award" class="w-8 h-8"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-brand-400">Resultado do Simulado</h2>
           <p class="text-sm text-slate-300 max-w-md mx-auto">Você acertou <strong>${correctCount} de ${total}</strong> questões (${scorePercentage}% de aproveitamento).</p>
-          <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-500 font-mono font-bold text-lg">
+          <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-400 font-mono font-bold text-lg">
             Bônus Ganho: +${earnedXp} XP ⚡
           </div>
         </div>
@@ -1069,7 +1133,8 @@
       saveProgressToDrive();
 
       const btnNext = document.getElementById('btnNextStep');
-      btnNext.textContent = 'Reiniciar Simulado 🔄';
+      btnNext.querySelector('span').textContent = 'Reiniciar Simulado';
+      lucide.createIcons();
     }
 
     function renderModuleCompletion() {
@@ -1079,10 +1144,12 @@
       document.getElementById('stepIndicator').textContent = 'Módulo Concluído!';
       document.getElementById('questionText').innerHTML = `
         <div class="text-center py-6 space-y-4">
-          <div class="text-5xl animate-bounce">🏆</div>
-          <h2 class="text-2xl font-bold text-brand-500">Parabéns! Módulo Concluído!</h2>
+          <div class="w-16 h-16 rounded-2xl bg-brand-500/20 border border-brand-500 flex items-center justify-center text-brand-400 mx-auto animate-bounce">
+            <i data-lucide="trophy" class="w-8 h-8"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-brand-400">Parabéns! Módulo Concluído!</h2>
           <p class="text-sm text-slate-300 max-w-md mx-auto">Você completou todos os tópicos de <strong>${escapeHTML(state.currentLesson.title)}</strong> e fortaleceu suas conexões neurais!</p>
-          <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-500 font-mono font-bold text-lg">
+          <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-400 font-mono font-bold text-lg">
             Total Ganho: +${state.currentLesson.steps.length * 50} XP
           </div>
         </div>
@@ -1092,7 +1159,8 @@
       document.getElementById('feedbackBox').classList.add('hidden');
 
       const btnNext = document.getElementById('btnNextStep');
-      btnNext.textContent = 'Reiniciar Módulo 🔄';
+      btnNext.querySelector('span').textContent = 'Reiniciar Módulo';
+      lucide.createIcons();
     }
 
     document.getElementById('btnNextStep').addEventListener('click', () => {
