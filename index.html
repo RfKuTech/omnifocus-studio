@@ -70,8 +70,8 @@
         </div>
       </div>
 
-      <!-- Placar e Botão de Conexão com a Nuvem -->
-      <div class="flex items-center gap-4 text-sm font-semibold">
+      <!-- Placar e Botões de Conexão/Biblioteca -->
+      <div class="flex items-center gap-3 text-sm font-semibold">
         <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
           <span class="text-yellow-400">🔥</span>
           <span id="streakCount" class="text-slate-200">0 Sequência</span>
@@ -80,6 +80,11 @@
           <span class="text-brand-500">⭐</span>
           <span id="xpCount" class="text-brand-500 font-mono">0 XP</span>
         </div>
+
+        <button id="btnOpenLibrary" class="px-3.5 py-1.5 rounded-lg bg-brand-600/20 hover:bg-brand-600/30 border border-brand-500/40 text-brand-400 text-xs font-semibold flex items-center gap-2 transition">
+          <span>📚</span>
+          <span>Minhas Aulas (<span id="libraryCount">0</span>)</span>
+        </button>
 
         <button id="btnOpenAuth" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition">
           <span id="userAvatar">☁️</span>
@@ -111,6 +116,23 @@
       
       <div class="mt-6 flex justify-end">
         <button id="btnCloseAuth" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal / Gaveta de Biblioteca de Aulas Salvas -->
+  <div id="libraryModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-dark-surface border border-dark-border rounded-2xl max-w-lg w-full p-6 shadow-2xl relative flex flex-col max-h-[80vh]">
+      <div class="flex justify-between items-center pb-4 border-b border-dark-border mb-4">
+        <div>
+          <h3 class="text-xl font-bold text-white">Minhas Aulas Salvas</h3>
+          <p class="text-xs text-slate-400">Acesse seus módulos criados anteriormente sem precisar refazer uploads.</p>
+        </div>
+        <button id="btnCloseLibrary" class="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+      </div>
+
+      <div id="libraryList" class="flex-1 overflow-y-auto space-y-3 pr-1">
+        <p class="text-slate-400 text-xs text-center py-8">Nenhuma aula salva até o momento.</p>
       </div>
     </div>
   </div>
@@ -171,7 +193,7 @@
       <div id="playerContainer" class="bg-dark-surface border border-dark-border rounded-2xl p-5 min-h-[180px] max-h-[340px] overflow-y-auto flex flex-col justify-start relative">
         <div id="playerPlaceholder" class="flex flex-col items-center justify-center gap-3 my-auto text-center">
           <span class="text-4xl opacity-40">🎮</span>
-          <p class="text-slate-400 text-sm">Crie um módulo no painel ao lado para iniciar a aula interativa.</p>
+          <p class="text-slate-400 text-sm">Crie um módulo ou selecione uma aula em "Minhas Aulas" para iniciar.</p>
         </div>
 
         <!-- Slide Animado com Controles de Áudio da Narração -->
@@ -241,6 +263,7 @@
       streak: 0,
       currentStep: 0,
       currentLesson: null,
+      library: JSON.parse(localStorage.getItem('omni_lessons_library')) || [],
       user: JSON.parse(localStorage.getItem('omni_user_profile')) || null,
       accessToken: null,
       provider: null,
@@ -286,478 +309,77 @@
       } catch (e) {}
     }
 
-    // Sistema de Narração por Voz em Português
-    function toggleSpeech(text) {
-      if (!('speechSynthesis' in window)) {
-        alert("A narração de voz não é suportada neste navegador.");
+    // Gerenciador de Biblioteca de Aulas Salvas
+    function saveLessonToLibrary(lesson) {
+      const existingIdx = state.library.findIndex(l => l.title.toLowerCase() === lesson.title.toLowerCase());
+      if (existingIdx >= 0) {
+        state.library[existingIdx] = lesson;
+      } else {
+        state.library.unshift(lesson);
+      }
+      localStorage.setItem('omni_lessons_library', JSON.stringify(state.library));
+      updateLibraryUI();
+      saveProgressToDrive();
+    }
+
+    function updateLibraryUI() {
+      const countEl = document.getElementById('libraryCount');
+      if (countEl) countEl.textContent = state.library.length;
+
+      const listContainer = document.getElementById('libraryList');
+      if (!listContainer) return;
+
+      if (!state.library.length) {
+        listContainer.innerHTML = `<p class="text-slate-400 text-xs text-center py-8">Nenhuma aula salva até o momento.</p>`;
         return;
       }
 
-      const ttsIcon = document.getElementById('ttsIcon');
-      const ttsText = document.getElementById('ttsText');
+      listContainer.innerHTML = '';
+      state.library.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = "p-3.5 bg-slate-900 border border-slate-700 hover:border-brand-500 rounded-xl transition flex justify-between items-center group cursor-pointer";
+        card.innerHTML = `
+          <div>
+            <h4 class="font-bold text-sm text-slate-100 group-hover:text-brand-400 transition">${escapeHTML(item.title)}</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">${item.steps ? item.steps.length : 0} tópicos • Salvo localmente / Nuvem</p>
+          </div>
+          <button class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition">
+            Carregar ➔
+          </button>
+        `;
 
-      if (state.isSpeaking) {
-        window.speechSynthesis.cancel();
-        state.isSpeaking = false;
-        ttsIcon.textContent = '🔊';
-        ttsText.textContent = 'Ouvir Explicação';
-        return;
-      }
+        card.addEventListener('click', () => {
+          loadLessonFromLibrary(idx);
+          document.getElementById('libraryModal').classList.add('hidden');
+        });
 
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 1.0;
-
-      utterance.onstart = () => {
-        state.isSpeaking = true;
-        ttsIcon.textContent = '⏸️';
-        ttsText.textContent = 'Pausar Narração';
-      };
-
-      utterance.onend = () => {
-        state.isSpeaking = false;
-        ttsIcon.textContent = '🔊';
-        ttsText.textContent = 'Ouvir Explicação';
-      };
-
-      utterance.onerror = () => {
-        state.isSpeaking = false;
-        ttsIcon.textContent = '🔊';
-        ttsText.textContent = 'Ouvir Explicação';
-      };
-
-      state.speechUtterance = utterance;
-      window.speechSynthesis.speak(utterance);
-    }
-
-    document.getElementById('btnTTS').addEventListener('click', () => {
-      const summaryText = document.getElementById('summaryText').textContent;
-      if (summaryText) {
-        toggleSpeech(summaryText);
-      }
-    });
-
-    // Modal e Login
-    document.getElementById('btnOpenAuth').addEventListener('click', () => {
-      document.getElementById('authModal').classList.remove('hidden');
-    });
-    document.getElementById('btnCloseAuth').addEventListener('click', () => {
-      document.getElementById('authModal').classList.add('hidden');
-    });
-
-    function updateUserProfileUI() {
-      if (state.user) {
-        document.getElementById('userNameLabel').textContent = state.user.name || 'Conectado';
-        document.getElementById('userAvatar').textContent = '☁️';
-      }
-    }
-    updateUserProfileUI();
-
-    // Sincronização Google Drive
-    let tokenClient;
-
-    function initGoogleDriveAuth() {
-      if (typeof google === 'undefined') return;
-
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: 'https://www.googleapis.com/auth/drive.file',
-        callback: async (response) => {
-          if (response.access_token) {
-            state.accessToken = response.access_token;
-            state.provider = 'google';
-            state.user = { name: 'Google Drive Sync', provider: 'google' };
-            localStorage.setItem('omni_user_profile', JSON.stringify(state.user));
-            updateUserProfileUI();
-            document.getElementById('authModal').classList.add('hidden');
-
-            await loadProgressFromDrive();
-          }
-        },
+        listContainer.appendChild(card);
       });
     }
 
-    document.getElementById('btnLoginGoogle').addEventListener('click', () => {
-      if (!tokenClient) initGoogleDriveAuth();
-      if (tokenClient) {
-        tokenClient.requestAccessToken();
-      }
-    });
+    function loadLessonFromLibrary(index) {
+      const lesson = state.library[index];
+      if (!lesson) return;
 
-    // Sincronização GitHub (Gist Privado)
-    document.getElementById('btnLoginGithub').addEventListener('click', () => {
-      const token = prompt("Insira seu GitHub Personal Access Token (com escopo 'gist') para sincronizar:");
-      if (!token) return;
-
-      state.accessToken = token;
-      state.provider = 'github';
-      state.user = { name: 'GitHub Sync', provider: 'github' };
-      localStorage.setItem('omni_user_profile', JSON.stringify(state.user));
-      updateUserProfileUI();
-      document.getElementById('authModal').classList.add('hidden');
-      alert("Conectado à nuvem do GitHub com sucesso!");
-    });
-
-    async function saveProgressToDrive() {
-      if (!state.accessToken || state.provider !== 'google') return;
-
-      const progressData = {
-        xp: state.xp,
-        streak: state.streak,
-        lastUpdated: new Date().toISOString()
-      };
-
-      try {
-        if (!state.driveFileId) {
-          const meta = { name: 'omnifocus_data.json', mimeType: 'application/json' };
-          const res = await fetch('https://www.googleapis.com/drive/v3/files', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${state.accessToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(meta)
-          });
-          const file = await res.json();
-          state.driveFileId = file.id;
-        }
-
-        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${state.driveFileId}?uploadType=media`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${state.accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(progressData)
-        });
-      } catch (e) {
-        console.warn("Sincronização em segundo plano no Drive...");
-      }
-    }
-
-    async function loadProgressFromDrive() {
-      if (!state.accessToken) return;
-
-      try {
-        const query = encodeURIComponent("name = 'omnifocus_data.json' and trashed = false");
-        const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}`, {
-          headers: { 'Authorization': `Bearer ${state.accessToken}` }
-        });
-        const listData = await listRes.json();
-
-        if (listData.files && listData.files.length > 0) {
-          state.driveFileId = listData.files[0].id;
-          const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${state.driveFileId}?alt=media`, {
-            headers: { 'Authorization': `Bearer ${state.accessToken}` }
-          });
-          const data = await fileRes.json();
-
-          if (data.xp !== undefined) state.xp = data.xp;
-          if (data.streak !== undefined) state.streak = data.streak;
-
-          document.getElementById('xpCount').textContent = `${state.xp} XP`;
-          document.getElementById('streakCount').textContent = `${state.streak} Sequência`;
-        }
-      } catch (e) {
-        console.warn("Primeiro acesso ao Drive, criando novo perfil...");
-      }
-    }
-
-    window.onload = () => {
-      setTimeout(initGoogleDriveAuth, 1000);
-    };
-
-    // Extração Nativa de Texto de PDFs usando PDF.js
-    async function extractPdfText(file) {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let fullText = "";
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(" ");
-        fullText += `\n[Página ${i}]\n` + pageText;
-      }
-      return fullText;
-    }
-
-    function readTextFile(file) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result || "");
-        reader.onerror = () => resolve("");
-        reader.readAsText(file);
-      });
-    }
-
-    document.getElementById('fileInput').addEventListener('change', async function(e) {
-      const files = Array.from(e.target.files);
-      if (!files.length) return;
-
-      const uploadText = document.getElementById('uploadText');
-      const uploadIcon = document.getElementById('uploadIcon');
-      const textArea = document.getElementById('lessonContent');
-
-      uploadIcon.textContent = '⏳';
-      uploadText.textContent = `Lendo e extraindo texto de ${files.length} PDF(s)...`;
-
-      let aggregatedText = "";
-
-      for (let file of files) {
-        if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
-          uploadText.textContent = `Lendo páginas do PDF: ${file.name}...`;
-          try {
-            const pdfText = await extractPdfText(file);
-            aggregatedText += `\n--- [PDF: ${file.name}] ---\n${pdfText}\n`;
-          } catch (err) {
-            aggregatedText += `\n--- [Erro ao ler PDF: ${file.name}] ---\n`;
-          }
-        } else {
-          const txtContent = await readTextFile(file);
-          aggregatedText += `\n--- [Arquivo: ${file.name}] ---\n${txtContent}\n`;
-        }
-      }
-
-      textArea.value += aggregatedText;
-      uploadIcon.textContent = '✅';
-      uploadText.textContent = `${files.length} arquivo(s) extraídos com sucesso!`;
-    });
-
-    function extractYouTubeId(url) {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      return (match && match[2].length === 11) ? match[2] : null;
-    }
-
-    // Chamada Segura para a Função Serverless na Vercel
-    async function generateLessonViaServerless(title, content) {
-      try {
-        const response = await fetch(state.apiServerlessUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, content })
-        });
-
-        if (response.ok) {
-          return await response.json();
-        }
-      } catch (err) {
-        console.warn("Servidor ocupado. Utilizando motor dinâmico local...");
-      }
-
-      // Fallback local
-      const snippets = content.split('\n').filter(line => line.trim().length > 30).slice(0, 6);
-      const steps = [];
-
-      for (let i = 0; i < Math.max(5, snippets.length); i++) {
-        const snippet = snippets[i] || `Conceito ${i + 1} sobre ${title}`;
-        steps.push({
-          summary: `Resumo explicativo do tópico ${i + 1}: ${snippet.substring(0, 150)}...`,
-          question: `[Questão ${i + 1} - ${title}] De acordo com o material analisado nos seus PDFs, qual a afirmativa correta?`,
-          options: [
-            `A aplicação prática correta envolve: ${snippet.substring(0, 80)}...`,
-            `O conceito nega totalmente o controle e a segurança dos dados.`,
-            `Protocolo descontinuado sem utilidade nos sistemas modernos.`
-          ],
-          correct: 0,
-          explanation: `Excelente! O tópico analisado nos seus PDFs reforça exatamente este conceito.`
-        });
-      }
-
-      return { steps };
-    }
-
-    // Evento do Formulário
-    document.getElementById('createLessonForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      state.isSpeaking = false;
-
-      const title = document.getElementById('lessonTitle').value.trim();
-      const content = document.getElementById('lessonContent').value.trim();
-      const ytUrl = document.getElementById('youtubeUrl').value.trim();
-
-      if (!title || !content) {
-        alert("Por favor, insira o título e certifique-se de que os arquivos foram carregados!");
-        return;
-      }
-
-      const btnGenIcon = document.getElementById('btnGenIcon');
-      const btnGenText = document.getElementById('btnGenText');
-      btnGenIcon.textContent = '⚙️';
-      btnGenText.textContent = 'IA processando PDFs na nuvem...';
-
-      const ytId = extractYouTubeId(ytUrl);
-
-      try {
-        let lessonData = await generateLessonViaServerless(title, content);
-
-        if (lessonData && lessonData.steps) {
-          state.currentLesson = {
-            title: title,
-            youtubeId: ytId,
-            steps: lessonData.steps
-          };
-
-          state.currentStep = 0;
-          renderCurrentStep();
-        }
-      } finally {
-        btnGenIcon.textContent = '⚡';
-        btnGenText.textContent = 'Gerar Módulo Gamificado com IA';
-      }
+      state.currentLesson = lesson;
+      state.currentStep = 0;
+      renderCurrentStep();
 
       const ytWrapper = document.getElementById('ytPlayerWrapper');
       const placeholder = document.getElementById('playerPlaceholder');
-      if (ytId) {
-        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${ytId}`;
+      if (lesson.youtubeId) {
+        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${lesson.youtubeId}`;
         ytWrapper.classList.remove('hidden');
         placeholder.classList.add('hidden');
       } else {
         ytWrapper.classList.add('hidden');
         placeholder.classList.remove('hidden');
       }
-    });
-
-    function renderCurrentStep() {
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      state.isSpeaking = false;
-      document.getElementById('ttsIcon').textContent = '🔊';
-      document.getElementById('ttsText').textContent = 'Ouvir Explicação';
-
-      if (!state.currentLesson || !state.currentLesson.steps.length) return;
-
-      const totalSteps = state.currentLesson.steps.length;
-
-      if (state.currentStep >= totalSteps) {
-        renderModuleCompletion();
-        return;
-      }
-
-      const step = state.currentLesson.steps[state.currentStep];
-
-      document.getElementById('currentTopicCategory').textContent = escapeHTML(state.currentLesson.title);
-      document.getElementById('stepIndicator').textContent = `Etapa ${state.currentStep + 1} / ${totalSteps}`;
-      document.getElementById('questionText').textContent = step.question;
-
-      const summaryCard = document.getElementById('summaryCard');
-      const summaryText = document.getElementById('summaryText');
-      const playerPlaceholder = document.getElementById('playerPlaceholder');
-
-      if (step.summary) {
-        summaryText.textContent = step.summary;
-        summaryCard.classList.remove('hidden');
-        if (playerPlaceholder) playerPlaceholder.classList.add('hidden');
-      } else {
-        summaryCard.classList.add('hidden');
-      }
-
-      const optionsGrid = document.getElementById('optionsGrid');
-      optionsGrid.innerHTML = '';
-
-      const feedbackBox = document.getElementById('feedbackBox');
-      feedbackBox.classList.add('hidden');
-
-      step.options.forEach((optionText, idx) => {
-        const btn = document.createElement('button');
-        btn.className = "w-full text-left p-3.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 hover:border-slate-600 text-sm font-medium transition flex items-start gap-3 break-words";
-        btn.innerHTML = `
-          <span class="w-6 h-6 rounded-lg bg-slate-800 border border-slate-600 flex items-center justify-center text-xs font-bold shrink-0 text-slate-300 mt-0.5">${idx + 1}</span>
-          <span class="text-slate-200 leading-normal flex-1">${escapeHTML(optionText)}</span>
-        `;
-        
-        btn.addEventListener('click', () => handleOptionSelect(idx, step.correct, step.explanation));
-        optionsGrid.appendChild(btn);
-      });
-
-      document.getElementById('btnPrevStep').disabled = state.currentStep === 0;
-      document.getElementById('btnNextStep').textContent = (state.currentStep === totalSteps - 1) ? 'Concluir Módulo 🏆' : 'Avançar →';
     }
 
-    function renderModuleCompletion() {
-      playSound('success');
-      document.getElementById('summaryCard').classList.add('hidden');
-      document.getElementById('stepIndicator').textContent = 'Módulo Concluído!';
-      document.getElementById('questionText').innerHTML = `
-        <div class="text-center py-6 space-y-4">
-          <div class="text-5xl animate-bounce">🏆</div>
-          <h2 class="text-2xl font-bold text-brand-500">Parabéns! Módulo Concluído!</h2>
-          <p class="text-sm text-slate-300 max-w-md mx-auto">Você completou todos os tópicos de <strong>${escapeHTML(state.currentLesson.title)}</strong> e fortaleceu suas conexões neurais!</p>
-          <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-500 font-mono font-bold text-lg">
-            Total Ganho: +${state.currentLesson.steps.length * 50} XP
-          </div>
-        </div>
-      `;
-
-      document.getElementById('optionsGrid').innerHTML = '';
-      document.getElementById('feedbackBox').classList.add('hidden');
-
-      const btnNext = document.getElementById('btnNextStep');
-      btnNext.textContent = 'Reiniciar Módulo 🔄';
-    }
-
-    function handleOptionSelect(selectedIndex, correctIndex, explanation) {
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      state.isSpeaking = false;
-
-      const feedbackBox = document.getElementById('feedbackBox');
-      feedbackBox.classList.remove('hidden');
-
-      if (selectedIndex === correctIndex) {
-        playSound('success');
-        state.xp += 50;
-        state.streak += 1;
-
-        feedbackBox.className = "mt-4 p-4 rounded-xl border border-brand-500/40 bg-brand-900/20 text-brand-300 text-sm break-words";
-        feedbackBox.innerHTML = `
-          <div class="font-bold mb-1 flex items-center gap-2">
-            <span>✨ Resposta Correta! (+50 XP)</span>
-          </div>
-          <div>${escapeHTML(explanation)}</div>
-        `;
-      } else {
-        playSound('error');
-        state.streak = 0;
-
-        feedbackBox.className = "mt-4 p-4 rounded-xl border border-amber-500/40 bg-amber-900/20 text-amber-300 text-sm break-words";
-        feedbackBox.innerHTML = `
-          <div class="font-bold mb-1 flex items-center gap-2">
-            <span>💡 Conceito para Aprendizado</span>
-          </div>
-          <div>${escapeHTML(explanation)}</div>
-        `;
-      }
-
-      document.getElementById('xpCount').textContent = `${state.xp} XP`;
-      document.getElementById('streakCount').textContent = `${state.streak} Sequência`;
-
-      saveProgressToDrive();
-    }
-
-    document.getElementById('btnNextStep').addEventListener('click', () => {
-      if (!state.currentLesson) return;
-      
-      const totalSteps = state.currentLesson.steps.length;
-
-      if (state.currentStep >= totalSteps) {
-        state.currentStep = 0;
-        renderCurrentStep();
-      } else {
-        state.currentStep++;
-        renderCurrentStep();
-      }
+    // Controladores de Modais
+    document.getElementById('btnOpenLibrary').addEventListener('click', () => {
+      updateLibraryUI();
+      document.getElementById('libraryModal').classList.remove('hidden');
     });
-
-    document.getElementById('btnPrevStep').addEventListener('click', () => {
-      if (!state.currentLesson) return;
-      if (state.currentStep > 0) {
-        state.currentStep--;
-        renderCurrentStep();
-      }
-    });
-  </script>
-</body>
-</html>
+    document.getElementById('btnCloseLibrary').addEventListe
