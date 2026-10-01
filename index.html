@@ -75,7 +75,7 @@
 </head>
 <body class="bg-dark-base text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-slate-900">
 
-  <!-- Container de Notificações Toast -->
+  <!-- Notification Container -->
   <div id="toastContainer" class="fixed top-20 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Header Superior -->
@@ -89,13 +89,13 @@
         </div>
         <div>
           <h1 class="font-bold text-lg leading-none text-white tracking-wide flex items-center gap-2">
-            OmniFocus Studio <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/30">Secured v2.1</span>
+            OmniFocus Studio <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/30">Hardened v2.2</span>
           </h1>
           <p class="text-xs text-slate-400 mt-0.5">Plataforma Gamificada de Aprendizagem Interativa</p>
         </div>
       </div>
 
-      <!-- Placar e Ações -->
+      <!-- Placar e Controles -->
       <div class="flex items-center gap-3 text-sm font-semibold">
         <div id="timerBadge" class="hidden items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl text-amber-400 font-mono font-bold animate-pulse">
           <i data-lucide="timer" class="w-4 h-4"></i> <span id="timerDisplay">10:00</span>
@@ -133,7 +133,7 @@
       <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
         <i data-lucide="cloud-lightning" class="w-5 h-5 text-brand-500"></i> Sincronização em Nuvem
       </h3>
-      <p class="text-xs text-slate-400 mb-5">Escolha o seu provedor para sincronizar seu progresso com segurança.</p>
+      <p class="text-xs text-slate-400 mb-5">Escolha o seu provedor para sincronizar o progresso na nuvem.</p>
       
       <div class="space-y-3">
         <button id="btnLoginGoogle" class="w-full bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
@@ -173,10 +173,10 @@
     </div>
   </div>
 
-  <!-- Área Principal -->
+  <!-- Conteúdo Principal -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
     
-    <!-- Criador de Aulas -->
+    <!-- Painel de Criação -->
     <section class="lg:col-span-5 glass-panel rounded-2xl p-5 flex flex-col gap-5 border border-slate-800/80 shadow-xl">
       <div>
         <h2 class="text-lg font-bold text-white flex items-center gap-2">
@@ -228,7 +228,7 @@
       </form>
     </section>
 
-    <!-- Player e Arena -->
+    <!-- Player & Arena -->
     <section class="lg:col-span-7 flex flex-col gap-6">
       
       <div id="playerContainer" class="glass-panel rounded-2xl p-5 border border-slate-800/80 shadow-xl flex flex-col justify-start relative">
@@ -267,7 +267,7 @@
         <p id="lifeTaskText" class="text-xs text-slate-300 leading-relaxed break-words"></p>
         <div class="flex justify-end">
           <button id="btnCompleteLifeTask" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center gap-2 shadow-md active:scale-95">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Concluído na Prática
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Concluído
           </button>
         </div>
       </div>
@@ -338,7 +338,12 @@
       isSpeaking: false
     };
 
-    // Sanitização rigorosa para prevenção de XSS
+    // Prevenção estrita de XSS com Sanitização Segura no DOM
+    function safeSetText(elementId, text) {
+      const el = document.getElementById(elementId);
+      if (el) el.textContent = text || '';
+    }
+
     function escapeHTML(str) {
       if (!str) return '';
       const div = document.createElement('div');
@@ -389,7 +394,7 @@
       } catch (e) {}
     }
 
-    // Leitura Segura de PDFs
+    // Leitura Protegida de PDFs
     async function extractPdfText(file) {
       try {
         const arrayBuffer = await file.arrayBuffer();
@@ -404,7 +409,7 @@
         }
         return fullText;
       } catch (err) {
-        showToast(`Erro ao ler PDF: ${file.name}. Verifique se não está protegido.`, 'error');
+        showToast(`PDF protegido ou inválido: ${file.name}`, 'error');
         return '';
       }
     }
@@ -446,7 +451,6 @@
       return (match && match[2].length === 11) ? match[2] : null;
     }
 
-    // Requisição para a Serverless API
     async function generateLessonViaServerless(title, content, youtubeUrl) {
       try {
         const response = await fetch(state.apiServerlessUrl, {
@@ -459,7 +463,7 @@
           return await response.json();
         }
       } catch (err) {
-        console.warn("API indisponível. Ativando motor local...");
+        console.warn("Servidor ocupado. Ativando contingência...");
       }
 
       const snippets = (content || '').split('\n').filter(l => l.trim().length > 20).slice(0, 5);
@@ -537,8 +541,7 @@
     }
 
     function updateLibraryUI() {
-      const countEl = document.getElementById('libraryCount');
-      if (countEl) countEl.textContent = state.library.length;
+      safeSetText('libraryCount', state.library.length);
 
       const listContainer = document.getElementById('libraryList');
       if (!listContainer) return;
@@ -612,16 +615,15 @@
       const step = state.currentLesson.steps[state.currentStep];
       let modeLabel = state.mode === 'video' ? '🎬 Vídeo Interativo' : state.mode === 'exam' ? '⏱️ Simulado' : '📖 Estudo';
 
-      document.getElementById('currentTopicCategory').textContent = `${escapeHTML(state.currentLesson.title)} (${modeLabel})`;
-      document.getElementById('stepIndicator').textContent = `Etapa ${state.currentStep + 1} / ${totalSteps}`;
-      document.getElementById('questionText').textContent = step.question;
+      safeSetText('currentTopicCategory', `${state.currentLesson.title} (${modeLabel})`);
+      safeSetText('stepIndicator', `Etapa ${state.currentStep + 1} / ${totalSteps}`);
+      safeSetText('questionText', step.question);
 
       const summaryCard = document.getElementById('summaryCard');
-      const summaryText = document.getElementById('summaryText');
       const playerPlaceholder = document.getElementById('playerPlaceholder');
 
       if (step.summary) {
-        summaryText.textContent = step.summary;
+        safeSetText('summaryText', step.summary);
         summaryCard.classList.remove('hidden');
         if (playerPlaceholder) playerPlaceholder.classList.add('hidden');
       } else {
@@ -630,11 +632,10 @@
 
       // Módulo de Vida
       const lifeModuleCard = document.getElementById('lifeModuleCard');
-      const lifeTaskText = document.getElementById('lifeTaskText');
       const lifeKey = `${state.currentLesson.title}_step_${state.currentStep}`;
 
       if (step.lifeTask && state.mode !== 'exam') {
-        lifeTaskText.textContent = step.lifeTask;
+        safeSetText('lifeTaskText', step.lifeTask);
         lifeModuleCard.classList.remove('hidden');
         const btn = document.getElementById('btnCompleteLifeTask');
         if (state.completedLifeTasks[lifeKey]) {
@@ -701,8 +702,8 @@
         feedbackBox.innerHTML = `<div class="font-bold mb-1 flex items-center gap-2 text-amber-400"><i data-lucide="lightbulb" class="w-4 h-4"></i> Conceito para Aprendizado</div><div>${escapeHTML(explanation)}</div>`;
       }
 
-      document.getElementById('xpCount').textContent = `${state.xp} XP`;
-      document.getElementById('streakCount').textContent = `${state.streak} Sequência`;
+      safeSetText('xpCount', `${state.xp} XP`);
+      safeSetText('streakCount', `${state.streak} Sequência`);
       lucide.createIcons();
     }
 
@@ -722,7 +723,7 @@
 
       document.getElementById('summaryCard').classList.add('hidden');
       document.getElementById('lifeModuleCard').classList.add('hidden');
-      document.getElementById('stepIndicator').textContent = 'Simulado Finalizado!';
+      safeSetText('stepIndicator', 'Simulado Finalizado!');
       
       document.getElementById('questionText').innerHTML = `
         <div class="text-center py-6 space-y-4">
@@ -739,7 +740,7 @@
 
       document.getElementById('optionsGrid').innerHTML = '';
       document.getElementById('feedbackBox').classList.add('hidden');
-      document.getElementById('xpCount').textContent = `${state.xp} XP`;
+      safeSetText('xpCount', `${state.xp} XP`);
       
       const btnNext = document.getElementById('btnNextStep');
       btnNext.querySelector('span').textContent = 'Reiniciar Simulado';
@@ -750,7 +751,7 @@
       playSound('success');
       document.getElementById('summaryCard').classList.add('hidden');
       document.getElementById('lifeModuleCard').classList.add('hidden');
-      document.getElementById('stepIndicator').textContent = 'Módulo Concluído!';
+      safeSetText('stepIndicator', 'Módulo Concluído!');
       document.getElementById('questionText').innerHTML = `
         <div class="text-center py-6 space-y-4">
           <div class="w-16 h-16 rounded-2xl bg-brand-500/20 border border-brand-500 flex items-center justify-center text-brand-400 mx-auto animate-bounce">
@@ -798,7 +799,7 @@
     document.getElementById('btnCompleteLifeTask').addEventListener('click', () => {
       playSound('success');
       state.xp += 100;
-      document.getElementById('xpCount').textContent = `${state.xp} XP`;
+      safeSetText('xpCount', `${state.xp} XP`);
       const key = `${state.currentLesson ? state.currentLesson.title : 'lesson'}_step_${state.currentStep}`;
       state.completedLifeTasks[key] = true;
       showToast("Desafio de Vida Concluído! +100 XP", "success");
