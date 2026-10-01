@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OmniFocus Studio - Plataforma Gamificada de Aprendizagem</title>
+  <title>OmniFocus Studio - DopaMind TDAH Edition</title>
 
-  <!-- Política de Segurança de Conteúdo (CSP) Rígida -->
+  <!-- Content Security Policy (CSP) Rígida -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://www.youtube.com https://accounts.google.com; connect-src 'self' https://omnifocus-studio.vercel.app https://www.googleapis.com https://generativelanguage.googleapis.com;">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +22,7 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
   </script>
 
-  <!-- Gerador de Relatórios em PDF -->
+  <!-- HTML2PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- Google Identity SDKs -->
@@ -87,14 +87,14 @@
       <div class="flex items-center space-x-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 p-0.5 shadow-lg shadow-brand-500/20">
           <div class="w-full h-full bg-dark-base rounded-[10px] flex items-center justify-center text-brand-500">
-            <i data-lucide="zap" class="w-5 h-5 fill-brand-500"></i>
+            <i data-lucide="brain-circuit" class="w-5 h-5 text-brand-400"></i>
           </div>
         </div>
         <div>
           <h1 class="font-bold text-lg leading-none text-white tracking-wide flex items-center gap-2">
-            OmniFocus Studio <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/30">Enterprise v3.0</span>
+            OmniFocus Studio <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/30">DopaMind v3.1</span>
           </h1>
-          <p class="text-xs text-slate-400 mt-0.5">Plataforma Gamificada de Aprendizagem Interativa</p>
+          <p class="text-xs text-slate-400 mt-0.5">Tutor IA de Aprendizagem Dopaminérgica para TDAH</p>
         </div>
       </div>
 
@@ -110,7 +110,7 @@
         </div>
         
         <div class="flex items-center gap-2 bg-slate-800/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60 shadow-sm">
-          <i data-lucide="star" class="w-4 h-4 text-brand-500 fill-brand-500"></i>
+          <i data-lucide="zap" class="w-4 h-4 text-brand-500 fill-brand-500"></i>
           <span id="xpCount" class="text-brand-400 font-mono font-bold">0 XP</span>
         </div>
 
@@ -181,17 +181,22 @@
     
     <!-- Painel de Criação -->
     <section class="lg:col-span-5 glass-panel rounded-2xl p-5 flex flex-col gap-5 border border-slate-800/80 shadow-xl">
-      <div>
-        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-          <i data-lucide="sparkles" class="w-5 h-5 text-brand-500"></i> Criar Nova Aula Interativa
-        </h2>
-        <p class="text-xs text-slate-400 mt-1">Combine PDFs e vídeos do YouTube em módulos gamificados.</p>
+      <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-5 h-5 text-brand-500"></i> Criar Aula com DopaMind
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Transforme PDFs e vídeos em pílulas dopaminérgicas de estudo.</p>
+        </div>
+        <div class="px-2.5 py-1 bg-brand-500/10 border border-brand-500/30 rounded-lg text-[11px] font-mono font-bold text-brand-400 flex items-center gap-1">
+          <i data-lucide="smile" class="w-3.5 h-3.5"></i> Tutor TDAH
+        </div>
       </div>
 
       <form id="createLessonForm" class="flex flex-col gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Título / Matéria</label>
-          <input type="text" id="lessonTitle" placeholder="Ex: Fundamentos de Redes" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none transition">
+          <input type="text" id="lessonTitle" placeholder="Ex: Algoritmos e Hiperfoco" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none transition">
         </div>
 
         <div>
@@ -226,7 +231,7 @@
 
         <button type="submit" id="btnGenerate" class="w-full bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg glow-effect active:scale-98">
           <i data-lucide="cpu" class="w-5 h-5"></i>
-          <span id="btnGenText">Gerar Módulo Gamificado com IA</span>
+          <span id="btnGenText">Gerar Aula Gamificada com DopaMind</span>
         </button>
       </form>
     </section>
@@ -249,10 +254,10 @@
         <div id="summaryCard" class="hidden w-full text-left space-y-3 bg-slate-900/90 p-4 rounded-xl border border-slate-700/80 shadow-md">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <span class="text-xs font-bold text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
-              <i data-lucide="lightbulb" class="w-4 h-4"></i> Slide Explicativo do Tópico
+              <i data-lucide="zap" class="w-4 h-4"></i> Pílula DopaMind de Conhecimento
             </span>
             <button id="btnTTS" class="px-3 py-1.5 rounded-lg bg-brand-600/20 hover:bg-brand-600/30 border border-brand-500/30 text-brand-400 text-xs font-semibold flex items-center gap-1.5 transition">
-              <i data-lucide="volume-2" class="w-4 h-4" id="ttsIcon"></i> <span id="ttsText">Ouvir Explicação</span>
+              <i data-lucide="volume-2" class="w-4 h-4" id="ttsIcon"></i> <span id="ttsText">Ouvir DopaMind</span>
             </button>
           </div>
           <p id="summaryText" class="text-sm text-slate-200 leading-relaxed whitespace-pre-line break-words font-normal"></p>
@@ -263,14 +268,14 @@
       <div id="lifeModuleCard" class="hidden glass-panel border border-amber-500/30 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
           <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="sprout" class="w-4 h-4"></i> Módulo de Vida — Desafio Prático
+            <i data-lucide="rocket" class="w-4 h-4"></i> Missão Prática DopaMind (Dopamina do Dia)
           </span>
           <span class="text-[11px] bg-amber-500/10 text-amber-300 font-mono font-bold px-2.5 py-0.5 rounded-full border border-amber-500/30">+100 XP Bônus</span>
         </div>
         <p id="lifeTaskText" class="text-xs text-slate-300 leading-relaxed break-words"></p>
         <div class="flex justify-end">
           <button id="btnCompleteLifeTask" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center gap-2 shadow-md active:scale-95">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Concluído
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Concluir Missão Prática
           </button>
         </div>
       </div>
@@ -475,16 +480,16 @@
       for (let i = 0; i < Math.max(4, snippets.length); i++) {
         const snippet = snippets[i] || `Conceito ${i + 1} sobre ${title}`;
         steps.push({
-          summary: `Resumo do Tópico ${i + 1}: ${snippet.substring(0, 140)}...`,
-          question: `[Questão ${i + 1}] Qual a afirmativa correta sobre ${title}?`,
+          summary: `⚡ Pílula DopaMind ${i + 1}: ${snippet.substring(0, 140)}...`,
+          question: `[Desafio Dopaminérgico ${i + 1}] Qual a afirmativa correta sobre ${title}?`,
           options: [
             `Aplicação prática recomendada: ${snippet.substring(0, 75)}...`,
-            `Conceito incompatível com as regras de segurança.`,
-            `Procedimento descontinuado.`
+            `Conceito desalinhado com o foco dinâmico.`,
+            `Procedimento obsoleto.`
           ],
           correct: 0,
-          explanation: `A primeira opção reflete a correta aplicação técnica do conceito.`,
-          lifeTask: `Missão Prática: Aplique ou observe este conceito de ${title} hoje.`
+          explanation: `Mandou bem! Essa alternativa conecta direto com a aplicação prática do conceito.`,
+          lifeTask: `🚀 Missão DopaMind: Aplique este conceito por 2 minutos hoje!`
         });
       }
       return { steps };
@@ -501,7 +506,7 @@
       if (!title) return;
 
       const btnGenText = document.getElementById('btnGenText');
-      btnGenText.textContent = 'IA criando Módulo Gamificado...';
+      btnGenText.textContent = 'DopaMind criando Módulo Gamificado...';
 
       const ytId = extractYouTubeId(ytUrl);
 
@@ -521,7 +526,7 @@
           showToast("Módulo criado com sucesso!", "success");
         }
       } finally {
-        btnGenText.textContent = 'Gerar Módulo Gamificado com IA';
+        btnGenText.textContent = 'Gerar Aula Gamificada com DopaMind';
       }
 
       const ytWrapper = document.getElementById('ytPlayerWrapper');
@@ -656,11 +661,11 @@
         if (state.completedLifeTasks[lifeKey]) {
           btn.disabled = true;
           btn.className = "px-4 py-2 rounded-xl bg-slate-800 text-brand-400 font-bold text-xs cursor-default flex items-center gap-2";
-          btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Desafio Concluído (+100 XP)`;
+          btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Missão Concluída (+100 XP)`;
         } else {
           btn.disabled = false;
           btn.className = "px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center gap-2 shadow-md active:scale-95";
-          btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Concluído`;
+          btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Concluir Missão Prática`;
         }
       } else {
         lifeModuleCard.classList.add('hidden');
@@ -724,15 +729,15 @@
         feedbackBox.className = "mt-4 p-4 rounded-xl border border-brand-500/40 bg-brand-900/30 text-brand-300 text-sm break-words";
         
         titleDiv.className += " text-brand-400";
-        titleDiv.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Resposta Correta! (+50 XP)`;
-        showToast("Resposta Correta! +50 XP", "success");
+        titleDiv.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> DopaMind: Resposta Correta! (+50 XP)`;
+        showToast("DopaMind: Resposta Correta! +50 XP", "success");
       } else {
         playSound('error');
         state.streak = 0;
         feedbackBox.className = "mt-4 p-4 rounded-xl border border-amber-500/40 bg-amber-900/30 text-amber-300 text-sm break-words";
         
         titleDiv.className += " text-amber-400";
-        titleDiv.innerHTML = `<i data-lucide="lightbulb" class="w-4 h-4"></i> Conceito para Aprendizado`;
+        titleDiv.innerHTML = `<i data-lucide="lightbulb" class="w-4 h-4"></i> DopaMind: Dica de Aprendizado`;
       }
 
       feedbackBox.appendChild(titleDiv);
@@ -770,10 +775,10 @@
         <div class="w-16 h-16 rounded-2xl bg-brand-500/20 border border-brand-500 flex items-center justify-center text-brand-400 mx-auto animate-bounce">
           <i data-lucide="award" class="w-8 h-8"></i>
         </div>
-        <h2 class="text-2xl font-bold text-brand-400">Resultado do Simulado</h2>
+        <h2 class="text-2xl font-bold text-brand-400">Resultado DopaMind</h2>
         <p class="text-sm text-slate-300 max-w-md mx-auto">Você acertou <strong>${correctCount} de ${total}</strong> questões (${scorePercentage}% de aproveitamento).</p>
         <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-400 font-mono font-bold text-lg">
-          Bônus Ganho: +${earnedXp} XP ⚡
+          Bônus de Dopamina: +${earnedXp} XP ⚡
         </div>
       `;
       qText.appendChild(resContainer);
@@ -803,7 +808,7 @@
           <i data-lucide="trophy" class="w-8 h-8"></i>
         </div>
         <h2 class="text-2xl font-bold text-brand-400">Parabéns! Módulo Concluído!</h2>
-        <p class="text-sm text-slate-300 max-w-md mx-auto">Você completou todos os tópicos com sucesso!</p>
+        <p class="text-sm text-slate-300 max-w-md mx-auto">O DopaMind celebra seu hiperfoco e conquista!</p>
         <div class="inline-block bg-slate-800 border border-brand-500/40 rounded-xl px-6 py-3 text-brand-400 font-mono font-bold text-lg">
           Total Ganho: +${state.currentLesson.steps.length * 50} XP
         </div>
@@ -847,7 +852,7 @@
       safeSetText('xpCount', `${state.xp} XP`);
       const key = `${state.currentLesson ? state.currentLesson.title : 'lesson'}_step_${state.currentStep}`;
       state.completedLifeTasks[key] = true;
-      showToast("Desafio de Vida Concluído! +100 XP", "success");
+      showToast("Missão DopaMind Concluída! +100 XP", "success");
       renderCurrentStep();
     });
   </script>
