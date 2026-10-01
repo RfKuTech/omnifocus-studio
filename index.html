@@ -315,7 +315,7 @@
 
   <script>
     const GOOGLE_CLIENT_ID = '19530400764-jesfucnmgr9l4uh32etfluould2huqus.apps.googleusercontent.com';
-    const GITHUB_CLIENT_ID = 'SEU_GITHUB_CLIENT_ID'; // Substitua pelo Client ID do seu OAuth App do GitHub
+    const GITHUB_CLIENT_ID = 'SEU_GITHUB_CLIENT_ID';
     
     const state = {
       xp: parseInt(localStorage.getItem('omni_xp') || '0', 10),
@@ -382,7 +382,6 @@
       } catch (e) {}
     }
 
-    // Modal Control
     document.getElementById('btnOpenAuth').addEventListener('click', () => {
       document.getElementById('authModal').classList.remove('hidden');
     });
@@ -408,12 +407,10 @@
       safeSetText('streakCount', `${state.streak} Sequência`);
     }
 
-    // Verificar se voltou do redirecionamento OAuth do GitHub com um Code
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
       if (code) {
-        // Simulação segura de troca de código OAuth ou salvamento automático do perfil via GitHub
         const githubUser = { name: 'GitHub User', email: 'github-user@users.noreply.github.com' };
         state.user = githubUser;
         state.provider = 'github';
@@ -425,7 +422,6 @@
       }
     });
 
-    // Google Login com Fallback
     document.getElementById('btnLoginGoogle').addEventListener('click', () => {
       if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
         authenticateLocally('Google Drive (Local)');
@@ -481,10 +477,8 @@
       showToast(`Conectado com sucesso via ${providerName}!`, 'success');
     }
 
-    // GitHub OAuth Redirecionamento Automático
     document.getElementById('btnLoginGithub').addEventListener('click', () => {
       if (GITHUB_CLIENT_ID === 'SEU_GITHUB_CLIENT_ID') {
-        // Fallback interativo amigável caso o Client ID ainda não esteja inserido no código
         const tokenInput = prompt('Insira seu Token do GitHub ou cole sua credencial:');
         if (tokenInput) {
           state.accessToken = tokenInput;
@@ -506,7 +500,6 @@
 
     updateProfileUI();
 
-    // PDF Extraction
     async function extractPdfText(file) {
       try {
         const arrayBuffer = await file.arrayBuffer();
