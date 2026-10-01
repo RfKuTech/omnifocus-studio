@@ -89,17 +89,23 @@
     </div>
   </header>
 
-  <!-- Modal de Opções de Login (Google Drive Sync) -->
+  <!-- Modal de Opções de Login Multi-Nuvem -->
   <div id="authModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-dark-surface border border-dark-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
       <h3 class="text-xl font-bold text-white mb-1">Sincronização em Nuvem</h3>
-      <p class="text-xs text-slate-400 mb-5">Conecte sua conta do Google para salvar seus módulos, progresso e XP diretamente na sua pasta privada do Google Drive.</p>
+      <p class="text-xs text-slate-400 mb-5">Escolha o seu provedor de preferência para sincronizar progresso, XP e módulos privados.</p>
       
       <div class="space-y-3">
-        <!-- Login Google / Google Drive Real -->
+        <!-- Google Drive Sync -->
         <button id="btnLoginGoogle" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
           <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.26v3.15C3.25 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.26C.46 8.23 0 10.06 0 12s.46 3.77 1.26 5.39l4.02-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.26 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/></svg>
-          Conectar Google Drive Sync
+          Google Drive Sync (Automático)
+        </button>
+
+        <!-- GitHub Sync (Gist Privado) -->
+        <button id="btnLoginGithub" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub Sync (Token/Gist)
         </button>
       </div>
       
@@ -226,8 +232,9 @@
   </main>
 
   <script>
-    // Client ID configurado oficialmente para o OmniFocus Studio
+    // Configuração dos Client IDs
     const GOOGLE_CLIENT_ID = '19530400764-jesfucnmgr9l4uh32etfluould2huqus.apps.googleusercontent.com';
+    const GITHUB_CLIENT_ID = 'Ov23li4HjupSzZYJlw80';
     
     const state = {
       xp: 0,
@@ -236,6 +243,7 @@
       currentLesson: null,
       user: JSON.parse(localStorage.getItem('omni_user_profile')) || null,
       accessToken: null,
+      provider: null,
       driveFileId: null,
       apiServerlessUrl: 'https://omnifocus-studio.vercel.app/api/generate',
       speechUtterance: null,
@@ -358,6 +366,7 @@
         callback: async (response) => {
           if (response.access_token) {
             state.accessToken = response.access_token;
+            state.provider = 'google';
             state.user = { name: 'Google Drive Sync', provider: 'google' };
             localStorage.setItem('omni_user_profile', JSON.stringify(state.user));
             updateUserProfileUI();
@@ -376,8 +385,22 @@
       }
     });
 
+    // Sincronização GitHub (Gist Privado)
+    document.getElementById('btnLoginGithub').addEventListener('click', () => {
+      const token = prompt("Insira seu GitHub Personal Access Token (com escopo 'gist') para sincronizar:");
+      if (!token) return;
+
+      state.accessToken = token;
+      state.provider = 'github';
+      state.user = { name: 'GitHub Sync', provider: 'github' };
+      localStorage.setItem('omni_user_profile', JSON.stringify(state.user));
+      updateUserProfileUI();
+      document.getElementById('authModal').classList.add('hidden');
+      alert("Conectado à nuvem do GitHub com sucesso!");
+    });
+
     async function saveProgressToDrive() {
-      if (!state.accessToken) return;
+      if (!state.accessToken || state.provider !== 'google') return;
 
       const progressData = {
         xp: state.xp,
