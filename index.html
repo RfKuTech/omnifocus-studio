@@ -16,9 +16,10 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
   </script>
 
-  <!-- SDK de Identidade e Conexão Google Drive -->
+  <!-- SDKs Oficiais do Google Identity e Google API Client -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -88,29 +89,17 @@
     </div>
   </header>
 
-  <!-- Modal de Opções de Login (Google, GitHub, Microsoft) -->
+  <!-- Modal de Opções de Login (Google Drive Sync) -->
   <div id="authModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-dark-surface border border-dark-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
       <h3 class="text-xl font-bold text-white mb-1">Sincronização em Nuvem</h3>
-      <p class="text-xs text-slate-400 mb-5">Conecte sua conta para salvar suas aulas, histórico e XP em tempo real no seu próprio armazenamento privado.</p>
+      <p class="text-xs text-slate-400 mb-5">Conecte sua conta do Google para salvar seus módulos, progresso e XP diretamente na sua pasta privada do Google Drive.</p>
       
       <div class="space-y-3">
-        <!-- Login Google / Google Drive -->
+        <!-- Login Google / Google Drive Real -->
         <button id="btnLoginGoogle" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
           <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.26v3.15C3.25 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.26C.46 8.23 0 10.06 0 12s.46 3.77 1.26 5.39l4.02-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.26 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/></svg>
-          Conectar com Google (Drive Sync)
-        </button>
-
-        <!-- Login GitHub -->
-        <button id="btnLoginGithub" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
-          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-          Conectar com GitHub
-        </button>
-
-        <!-- Login Microsoft -->
-        <button id="btnLoginMicrosoft" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition">
-          <svg class="w-5 h-5" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
-          Conectar com Microsoft
+          Conectar Google Drive Sync
         </button>
       </div>
       
@@ -172,18 +161,24 @@
     <!-- Painel Principal: Player e Interatividade -->
     <section class="lg:col-span-7 flex flex-col gap-6">
       
-      <!-- Container do Resumo Explicativo da Aula (Flexível com Scroll) -->
-      <div id="playerContainer" class="bg-dark-surface border border-dark-border rounded-2xl p-5 min-h-[160px] max-h-[320px] overflow-y-auto flex flex-col justify-start relative">
+      <!-- Container do Resumo Explicativo com Narração e Slide -->
+      <div id="playerContainer" class="bg-dark-surface border border-dark-border rounded-2xl p-5 min-h-[180px] max-h-[340px] overflow-y-auto flex flex-col justify-start relative">
         <div id="playerPlaceholder" class="flex flex-col items-center justify-center gap-3 my-auto text-center">
           <span class="text-4xl opacity-40">🎮</span>
           <p class="text-slate-400 text-sm">Crie um módulo no painel ao lado para iniciar a aula interativa.</p>
         </div>
 
-        <!-- Roteiro de Aula Visual Sintético -->
-        <div id="summaryCard" class="hidden w-full text-left space-y-2 bg-slate-900/90 p-4 rounded-xl border border-slate-700/80">
-          <span class="text-xs font-bold text-brand-500 uppercase tracking-wider flex items-center gap-1.5">
-            <span>💡</span> Resumo Explicativo do Tópico
-          </span>
+        <!-- Slide Animado com Controles de Áudio da Narração -->
+        <div id="summaryCard" class="hidden w-full text-left space-y-3 bg-slate-900/90 p-4 rounded-xl border border-slate-700/80 shadow-md">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="text-xs font-bold text-brand-500 uppercase tracking-wider flex items-center gap-1.5">
+              <span>💡</span> Slide Explicativo do Tópico
+            </span>
+            <!-- Botão de Narração em Voz Alta -->
+            <button id="btnTTS" class="px-3 py-1 rounded-lg bg-brand-600/20 hover:bg-brand-600/30 border border-brand-500/30 text-brand-400 text-xs font-semibold flex items-center gap-1.5 transition">
+              <span id="ttsIcon">🔊</span> <span id="ttsText">Ouvir Explicação</span>
+            </button>
+          </div>
           <p id="summaryText" class="text-sm text-slate-200 leading-relaxed whitespace-pre-line break-words"></p>
         </div>
 
@@ -231,13 +226,20 @@
   </main>
 
   <script>
+    // Client ID configurado oficialmente para o OmniFocus Studio
+    const GOOGLE_CLIENT_ID = '19530400764-jesfucnmgr9l4uh32etfluould2huqus.apps.googleusercontent.com';
+    
     const state = {
       xp: 0,
       streak: 0,
       currentStep: 0,
       currentLesson: null,
       user: JSON.parse(localStorage.getItem('omni_user_profile')) || null,
-      apiServerlessUrl: 'https://omnifocus-studio.vercel.app/api/generate'
+      accessToken: null,
+      driveFileId: null,
+      apiServerlessUrl: 'https://omnifocus-studio.vercel.app/api/generate',
+      speechUtterance: null,
+      isSpeaking: false
     };
 
     function escapeHTML(str) {
@@ -276,7 +278,59 @@
       } catch (e) {}
     }
 
-    // Modal e Login do Usuário
+    // Sistema de Narração por Voz em Português
+    function toggleSpeech(text) {
+      if (!('speechSynthesis' in window)) {
+        alert("A narração de voz não é suportada neste navegador.");
+        return;
+      }
+
+      const ttsIcon = document.getElementById('ttsIcon');
+      const ttsText = document.getElementById('ttsText');
+
+      if (state.isSpeaking) {
+        window.speechSynthesis.cancel();
+        state.isSpeaking = false;
+        ttsIcon.textContent = '🔊';
+        ttsText.textContent = 'Ouvir Explicação';
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 1.0;
+
+      utterance.onstart = () => {
+        state.isSpeaking = true;
+        ttsIcon.textContent = '⏸️';
+        ttsText.textContent = 'Pausar Narração';
+      };
+
+      utterance.onend = () => {
+        state.isSpeaking = false;
+        ttsIcon.textContent = '🔊';
+        ttsText.textContent = 'Ouvir Explicação';
+      };
+
+      utterance.onerror = () => {
+        state.isSpeaking = false;
+        ttsIcon.textContent = '🔊';
+        ttsText.textContent = 'Ouvir Explicação';
+      };
+
+      state.speechUtterance = utterance;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    document.getElementById('btnTTS').addEventListener('click', () => {
+      const summaryText = document.getElementById('summaryText').textContent;
+      if (summaryText) {
+        toggleSpeech(summaryText);
+      }
+    });
+
+    // Modal e Login
     document.getElementById('btnOpenAuth').addEventListener('click', () => {
       document.getElementById('authModal').classList.remove('hidden');
     });
@@ -287,34 +341,109 @@
     function updateUserProfileUI() {
       if (state.user) {
         document.getElementById('userNameLabel').textContent = state.user.name || 'Conectado';
-        document.getElementById('userAvatar').textContent = '👤';
+        document.getElementById('userAvatar').textContent = '☁️';
       }
     }
     updateUserProfileUI();
 
+    // Sincronização Google Drive
+    let tokenClient;
+
+    function initGoogleDriveAuth() {
+      if (typeof google === 'undefined') return;
+
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: async (response) => {
+          if (response.access_token) {
+            state.accessToken = response.access_token;
+            state.user = { name: 'Google Drive Sync', provider: 'google' };
+            localStorage.setItem('omni_user_profile', JSON.stringify(state.user));
+            updateUserProfileUI();
+            document.getElementById('authModal').classList.add('hidden');
+
+            await loadProgressFromDrive();
+          }
+        },
+      });
+    }
+
     document.getElementById('btnLoginGoogle').addEventListener('click', () => {
-      state.user = { name: 'Usuário Google', provider: 'google' };
-      localStorage.setItem('omni_user_profile', JSON.stringify(state.user));
-      updateUserProfileUI();
-      document.getElementById('authModal').classList.add('hidden');
-      alert('Conectado com sucesso ao Google Drive! Seu progresso será sincronizado na nuvem.');
+      if (!tokenClient) initGoogleDriveAuth();
+      if (tokenClient) {
+        tokenClient.requestAccessToken();
+      }
     });
 
-    document.getElementById('btnLoginGithub').addEventListener('click', () => {
-      state.user = { name: 'Usuário GitHub', provider: 'github' };
-      localStorage.setItem('omni_user_profile', JSON.stringify(state.user));
-      updateUserProfileUI();
-      document.getElementById('authModal').classList.add('hidden');
-      alert('Conectado com sucesso ao GitHub!');
-    });
+    async function saveProgressToDrive() {
+      if (!state.accessToken) return;
 
-    document.getElementById('btnLoginMicrosoft').addEventListener('click', () => {
-      state.user = { name: 'Usuário Microsoft', provider: 'microsoft' };
-      localStorage.setItem('omni_user_profile', JSON.stringify(state.user));
-      updateUserProfileUI();
-      document.getElementById('authModal').classList.add('hidden');
-      alert('Conectado com sucesso à conta Microsoft!');
-    });
+      const progressData = {
+        xp: state.xp,
+        streak: state.streak,
+        lastUpdated: new Date().toISOString()
+      };
+
+      try {
+        if (!state.driveFileId) {
+          const meta = { name: 'omnifocus_data.json', mimeType: 'application/json' };
+          const res = await fetch('https://www.googleapis.com/drive/v3/files', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${state.accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(meta)
+          });
+          const file = await res.json();
+          state.driveFileId = file.id;
+        }
+
+        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${state.driveFileId}?uploadType=media`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${state.accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(progressData)
+        });
+      } catch (e) {
+        console.warn("Sincronização em segundo plano no Drive...");
+      }
+    }
+
+    async function loadProgressFromDrive() {
+      if (!state.accessToken) return;
+
+      try {
+        const query = encodeURIComponent("name = 'omnifocus_data.json' and trashed = false");
+        const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}`, {
+          headers: { 'Authorization': `Bearer ${state.accessToken}` }
+        });
+        const listData = await listRes.json();
+
+        if (listData.files && listData.files.length > 0) {
+          state.driveFileId = listData.files[0].id;
+          const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${state.driveFileId}?alt=media`, {
+            headers: { 'Authorization': `Bearer ${state.accessToken}` }
+          });
+          const data = await fileRes.json();
+
+          if (data.xp !== undefined) state.xp = data.xp;
+          if (data.streak !== undefined) state.streak = data.streak;
+
+          document.getElementById('xpCount').textContent = `${state.xp} XP`;
+          document.getElementById('streakCount').textContent = `${state.streak} Sequência`;
+        }
+      } catch (e) {
+        console.warn("Primeiro acesso ao Drive, criando novo perfil...");
+      }
+    }
+
+    window.onload = () => {
+      setTimeout(initGoogleDriveAuth, 1000);
+    };
 
     // Extração Nativa de Texto de PDFs usando PDF.js
     async function extractPdfText(file) {
@@ -395,7 +524,7 @@
         console.warn("Servidor ocupado. Utilizando motor dinâmico local...");
       }
 
-      // Fallback local caso o servidor esteja indisponível
+      // Fallback local
       const snippets = content.split('\n').filter(line => line.trim().length > 30).slice(0, 6);
       const steps = [];
 
@@ -420,6 +549,9 @@
     // Evento do Formulário
     document.getElementById('createLessonForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      state.isSpeaking = false;
 
       const title = document.getElementById('lessonTitle').value.trim();
       const content = document.getElementById('lessonContent').value.trim();
@@ -468,6 +600,11 @@
     });
 
     function renderCurrentStep() {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      state.isSpeaking = false;
+      document.getElementById('ttsIcon').textContent = '🔊';
+      document.getElementById('ttsText').textContent = 'Ouvir Explicação';
+
       if (!state.currentLesson || !state.currentLesson.steps.length) return;
 
       const totalSteps = state.currentLesson.steps.length;
@@ -540,6 +677,9 @@
     }
 
     function handleOptionSelect(selectedIndex, correctIndex, explanation) {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      state.isSpeaking = false;
+
       const feedbackBox = document.getElementById('feedbackBox');
       feedbackBox.classList.remove('hidden');
 
@@ -570,6 +710,8 @@
 
       document.getElementById('xpCount').textContent = `${state.xp} XP`;
       document.getElementById('streakCount').textContent = `${state.streak} Sequência`;
+
+      saveProgressToDrive();
     }
 
     document.getElementById('btnNextStep').addEventListener('click', () => {
