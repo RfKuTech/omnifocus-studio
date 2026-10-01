@@ -69,7 +69,7 @@
         </div>
         <div>
           <h1 class="font-bold text-lg leading-none text-white tracking-wide">OmniFocus Studio</h1>
-          <p class="text-xs text-slate-400 mt-0.5">Aprendizagem Multidisciplinar Interativa</p>
+          <p class="text-xs text-slate-400 mt-0.5">Vídeos Interativos, Simulações & Aprendizagem Multidisciplinar</p>
         </div>
       </div>
 
@@ -155,9 +155,9 @@
     <section class="lg:col-span-5 bg-dark-surface border border-dark-border rounded-2xl p-5 flex flex-col gap-5">
       <div>
         <h2 class="text-lg font-bold text-white flex items-center gap-2">
-          <span>📚</span> Criar Nova Aula Interativa
+          <span>⚙️</span> Criar Nova Aula Interativa
         </h2>
-        <p class="text-xs text-slate-400 mt-1">Insira PDFs, apostilas, textos ou links do YouTube para a IA processar.</p>
+        <p class="text-xs text-slate-400 mt-1">Combine PDFs, links do YouTube e escolha seu formato de aprendizagem.</p>
       </div>
 
       <form id="createLessonForm" class="flex flex-col gap-4">
@@ -166,18 +166,25 @@
           <input type="text" id="lessonTitle" placeholder="Ex: Fundamentos de Redes de Computadores" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none">
         </div>
 
-        <!-- Seletor de Modo de Aprendizagem -->
+        <!-- Seletor de Modo de Aprendizagem Completo -->
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Modo de Aprendizagem</label>
           <select id="learningMode" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none font-semibold">
-            <option value="study">📖 Modo Estudo (Feedback Instantâneo)</option>
-            <option value="exam">⏱️ Modo Simulado / Exame (Com Cronômetro + Bônus XP)</option>
+            <option value="video">🎬 Módulo Vídeo Interativo (Player + Pausas com Questões)</option>
+            <option value="exam">⏱️ Modo Simulado / Exame (Cronômetro + Nota Final + Bônus XP)</option>
+            <option value="study">📖 Modo Estudo (Sem Cronômetro + Feedback Instantâneo)</option>
           </select>
+        </div>
+
+        <!-- Input de Vídeo do YouTube -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Link do Vídeo do YouTube (Opcional / Módulo Vídeo)</label>
+          <input type="url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none">
         </div>
 
         <!-- Upload de Arquivos -->
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Upload de Arquivos (PDFs, TXT, MD)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Upload de Materiais (PDFs, TXT, MD)</label>
           <div class="relative border-2 border-dashed border-slate-700 hover:border-brand-500 rounded-xl p-4 text-center cursor-pointer transition bg-slate-900/50">
             <input type="file" id="fileInput" multiple accept=".pdf,.txt,.md,.json,.csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
             <div id="fileUploadLabel" class="text-xs text-slate-400 flex flex-col items-center gap-1">
@@ -188,16 +195,10 @@
           </div>
         </div>
 
-        <!-- Input de Vídeo do YouTube -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Link de Vídeo do YouTube (Opcional)</label>
-          <input type="url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none">
-        </div>
-
         <!-- Conteúdo em Texto -->
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Texto Extraído dos PDFs / Conteúdo</label>
-          <textarea id="lessonContent" rows="4" placeholder="O texto extraído dos seus PDFs aparecerá aqui para ser enviado à IA..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none resize-none font-mono text-xs"></textarea>
+          <textarea id="lessonContent" rows="3" placeholder="O texto extraído dos seus PDFs aparecerá aqui para ser enviado à IA..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none resize-none font-mono text-xs"></textarea>
         </div>
 
         <button type="submit" id="btnGenerate" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-brand-900/20">
@@ -209,11 +210,16 @@
     <!-- Painel Principal: Player e Interatividade -->
     <section class="lg:col-span-7 flex flex-col gap-6">
       
-      <!-- Container do Resumo Explicativo com Narração e Slide -->
-      <div id="playerContainer" class="bg-dark-surface border border-dark-border rounded-2xl p-5 min-h-[180px] max-h-[340px] overflow-y-auto flex flex-col justify-start relative">
-        <div id="playerPlaceholder" class="flex flex-col items-center justify-center gap-3 my-auto text-center">
+      <!-- Container do Player de Vídeo Interativo & Resumos -->
+      <div id="playerContainer" class="bg-dark-surface border border-dark-border rounded-2xl p-5 min-h-[200px] flex flex-col justify-start relative">
+        <div id="playerPlaceholder" class="flex flex-col items-center justify-center gap-3 my-auto text-center py-8">
           <span class="text-4xl opacity-40">🎮</span>
-          <p class="text-slate-400 text-sm">Crie um módulo ou selecione uma aula em "Minhas Aulas" para iniciar.</p>
+          <p class="text-slate-400 text-sm">Crie um módulo ou selecione uma aula na biblioteca para iniciar.</p>
+        </div>
+
+        <!-- Player do YouTube Embutido -->
+        <div id="ytPlayerWrapper" class="hidden w-full aspect-video rounded-xl overflow-hidden border border-slate-700 mb-4 shrink-0 shadow-lg">
+          <iframe id="ytIframe" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
 
         <!-- Slide Animado com Controles de Áudio da Narração -->
@@ -222,21 +228,31 @@
             <span class="text-xs font-bold text-brand-500 uppercase tracking-wider flex items-center gap-1.5">
               <span>💡</span> Slide Explicativo do Tópico
             </span>
-            <!-- Botão de Narração em Voz Alta -->
             <button id="btnTTS" class="px-3 py-1 rounded-lg bg-brand-600/20 hover:bg-brand-600/30 border border-brand-500/30 text-brand-400 text-xs font-semibold flex items-center gap-1.5 transition">
               <span id="ttsIcon">🔊</span> <span id="ttsText">Ouvir Explicação</span>
             </button>
           </div>
           <p id="summaryText" class="text-sm text-slate-200 leading-relaxed whitespace-pre-line break-words"></p>
         </div>
+      </div>
 
-        <!-- Player do YouTube Embutido -->
-        <div id="ytPlayerWrapper" class="hidden w-full aspect-video rounded-xl overflow-hidden border border-slate-700 mt-3 shrink-0">
-          <iframe id="ytIframe" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      <!-- Módulo de Vida (Aplicações Práticas no Mundo Real) -->
+      <div id="lifeModuleCard" class="hidden bg-slate-900/90 border border-brand-500/30 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span>🌱</span> Módulo de Vida — Desafio Prático
+          </span>
+          <span class="text-[11px] bg-amber-500/10 text-amber-300 font-mono font-semibold px-2 py-0.5 rounded border border-amber-500/30">+100 XP Bônus</span>
+        </div>
+        <p id="lifeTaskText" class="text-xs text-slate-300 leading-relaxed break-words"></p>
+        <div class="flex justify-end">
+          <button id="btnCompleteLifeTask" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1.5">
+            <span>✅</span> Marcar como Concluído na Prática
+          </button>
         </div>
       </div>
 
-      <!-- Arena de Atividades / Simulador Interativo -->
+      <!-- Arena de Atividades Interativas Sincronizadas -->
       <div id="interactiveArena" class="bg-dark-surface border border-dark-border rounded-2xl p-6 flex-1 flex flex-col justify-between overflow-y-auto max-h-[500px]">
         <div id="arenaContent" class="space-y-4">
           <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-2">
@@ -246,7 +262,7 @@
 
           <div id="questionContainer" class="space-y-4">
             <h3 id="questionText" class="text-base md:text-lg font-semibold text-white leading-relaxed break-words">
-              Aguardando início do módulo de estudos...
+              Aguardando início do módulo...
             </h3>
             
             <div id="optionsGrid" class="grid grid-cols-1 gap-3 pt-1">
@@ -264,7 +280,7 @@
             ← Anterior
           </button>
           <button id="btnNextStep" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition flex items-center gap-2 shadow-md shadow-brand-900/30">
-            Avançar →
+            Avançar Tópico →
           </button>
         </div>
       </div>
@@ -283,7 +299,7 @@
       streak: 0,
       currentStep: 0,
       currentLesson: null,
-      mode: 'study', // 'study' ou 'exam'
+      mode: 'video', // 'video', 'study' ou 'exam'
       examAnswers: [],
       timerInterval: null,
       timeLeft: 600,
@@ -343,19 +359,4 @@
       const dateStr = new Date().toLocaleDateString('pt-BR');
 
       container.innerHTML = `
-        <div style="border-bottom: 2px solid #22c55e; padding-bottom: 15px; margin-bottom: 20px;">
-          <h1 style="color: #16a34a; font-size: 24px; margin: 0;">OmniFocus Studio — Relatório do Aluno</h1>
-          <p style="font-size: 12px; color: #64748b; margin-top: 5px;">Data do Relatório: ${dateStr}</p>
-        </div>
-
-        <div style="display: flex; gap: 20px; margin-bottom: 25px;">
-          <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
-            <div style="font-size: 20px; font-weight: bold; color: #15803d;">${state.xp} XP</div>
-            <div style="font-size: 11px; color: #475569;">Pontuação Total</div>
-          </div>
-          <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
-            <div style="font-size: 20px; font-weight: bold; color: #d97706;">${state.streak} Dias</div>
-            <div style="font-size: 11px; color: #475569;">Sequência Atual</div>
-          </div>
-          <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
-            <div style="font-size: 20px; font-weight: bold; color: #2563eb;">${state.library.length
+        <div style="border-bottom: 2px sol
