@@ -98,7 +98,7 @@
         </button>
 
         <button id="btnOpenAuth" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition">
-          <span id="userAvatar">☁️</span>
+          <span id="userAvatar">☁️️</span>
           <span id="userNameLabel">Conectar Nuvem</span>
         </button>
       </div>
@@ -171,7 +171,7 @@
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Modo de Aprendizagem</label>
           <select id="learningMode" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none font-semibold">
             <option value="video">🎬 Módulo Vídeo Interativo (Player + Pausas com Questões)</option>
-            <option value="exam">⏱️ Modo Simulado / Exame (Cronômetro + Nota Final + Bônus XP)</option>
+            <option value="exam">⏱️️ Modo Simulado / Exame (Cronômetro + Nota Final + Bônus XP)</option>
             <option value="study">📖 Modo Estudo (Sem Cronômetro + Feedback Instantâneo)</option>
           </select>
         </div>
@@ -301,6 +301,7 @@
       currentLesson: null,
       mode: 'video', // 'video', 'study' ou 'exam'
       examAnswers: [],
+      completedLifeTasks: {}, // Rastreador das missões práticas concluídas
       timerInterval: null,
       timeLeft: 600,
       library: JSON.parse(localStorage.getItem('omni_lessons_library')) || [],
@@ -400,11 +401,14 @@
       html2pdf().set(opt).from(container).save();
     });
 
-    // Módulo de Vida — Conclusão de Ação Prática
+    // Módulo de Vida — Conclusão de Ação Prática com Persistência
     document.getElementById('btnCompleteLifeTask').addEventListener('click', () => {
       playSound('success');
       state.xp += 100;
       document.getElementById('xpCount').textContent = `${state.xp} XP`;
+
+      const key = `${state.currentLesson ? state.currentLesson.title : 'lesson'}_step_${state.currentStep}`;
+      state.completedLifeTasks[key] = true;
       
       const btn = document.getElementById('btnCompleteLifeTask');
       btn.disabled = true;
@@ -514,7 +518,7 @@
       const ytWrapper = document.getElementById('ytPlayerWrapper');
       const placeholder = document.getElementById('playerPlaceholder');
       if (lesson.youtubeId) {
-        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${lesson.youtubeId}`;
+        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${lesson.youtubeId}?autoplay=1`;
         ytWrapper.classList.remove('hidden');
         placeholder.classList.add('hidden');
       } else {
@@ -651,6 +655,7 @@
         xp: state.xp,
         streak: state.streak,
         library: state.library,
+        completedLifeTasks: state.completedLifeTasks,
         lastUpdated: new Date().toISOString()
       };
 
@@ -701,6 +706,7 @@
 
           if (data.xp !== undefined) state.xp = data.xp;
           if (data.streak !== undefined) state.streak = data.streak;
+          if (data.completedLifeTasks) state.completedLifeTasks = data.completedLifeTasks;
           if (data.library && Array.isArray(data.library)) {
             state.library = data.library;
             localStorage.setItem('omni_lessons_library', JSON.stringify(state.library));
@@ -720,7 +726,7 @@
       setTimeout(initGoogleDriveAuth, 1000);
     };
 
-    // PDF.js Extração com Reset do File Input
+    // PDF.js Extração com Tratamento Robusto de Exceções
     async function extractPdfText(file) {
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -775,7 +781,7 @@
       textArea.value += aggregatedText;
       uploadIcon.textContent = '✅';
       uploadText.textContent = `${files.length} arquivo(s) extraídos com sucesso!`;
-      e.target.value = ''; // Reset do input
+      e.target.value = '';
     });
 
     function extractYouTubeId(url) {
@@ -784,13 +790,13 @@
       return (match && match[2].length === 11) ? match[2] : null;
     }
 
-    // Chamada Serverless
-    async function generateLessonViaServerless(title, content) {
+    // Chamada à API Serverless Vercel
+    async function generateLessonViaServerless(title, content, youtubeUrl) {
       try {
         const response = await fetch(state.apiServerlessUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, content })
+          body: JSON.stringify({ title, content, youtubeUrl })
         });
 
         if (response.ok) {
@@ -847,7 +853,7 @@
       const ytId = extractYouTubeId(ytUrl);
 
       try {
-        let lessonData = await generateLessonViaServerless(title, content || title);
+        let lessonData = await generateLessonViaServerless(title, content || title, ytUrl);
 
         if (lessonData && lessonData.steps) {
           state.currentLesson = {
@@ -877,7 +883,7 @@
       const ytWrapper = document.getElementById('ytPlayerWrapper');
       const placeholder = document.getElementById('playerPlaceholder');
       if (ytId) {
-        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${ytId}`;
+        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
         ytWrapper.classList.remove('hidden');
         placeholder.classList.add('hidden');
       } else {
@@ -929,15 +935,24 @@
         summaryCard.classList.add('hidden');
       }
 
-      // Módulo de Vida
+      // Módulo de Vida - Verificação de Estado Concluído
+      const lifeKey = `${state.currentLesson.title}_step_${state.currentStep}`;
+      const isLifeCompleted = state.completedLifeTasks[lifeKey];
+
       if (step.lifeTask && state.mode !== 'exam') {
         lifeTaskText.textContent = step.lifeTask;
         lifeModuleCard.classList.remove('hidden');
 
         const btn = document.getElementById('btnCompleteLifeTask');
-        btn.disabled = false;
-        btn.className = "px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1.5";
-        btn.innerHTML = `<span>✅</span> Marcar como Concluído na Prática`;
+        if (isLifeCompleted) {
+          btn.disabled = true;
+          btn.className = "px-3.5 py-1.5 rounded-lg bg-slate-800 text-brand-400 font-bold text-xs cursor-default";
+          btn.innerHTML = `<span>✨</span> Desafio de Vida Concluído (+100 XP)`;
+        } else {
+          btn.disabled = false;
+          btn.className = "px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1.5";
+          btn.innerHTML = `<span>✅</span> Marcar como Concluído na Prática`;
+        }
       } else {
         lifeModuleCard.classList.add('hidden');
       }
