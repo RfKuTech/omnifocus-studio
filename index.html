@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniFocus Studio — DopaMind</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+
+  <!-- YouTube Iframe API: a flag precisa existir ANTES do script -->
+  <script>
+    let ytReady = false;
+    function onYouTubeIframeAPIReady() { ytReady = true; }
+  </script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { brand: { 100:'#d1fae5', 300:'#6ee7b7', 400:'#34d399', 500:'#10b981', 600:'#059669', 900:'#064e3b' } }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background: radial-gradient(circle at 50% -10%, rgba(16, 185, 129, 0.15) 0%, rgba(3, 7, 18, 1) 60%); background-color: #030712; color: #f1f5f9; }
+    .ultra-glass { background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 1rem; }
+    .locked-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: inherit; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+
+  <div id="toastContainer" class="fixed top-20 right-5 z-50 flex flex-col gap-2"></div>
+
+  <header class="border-b border-white/10 ultra-glass sticky top-0 z-40 m-2">
+    <div class="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="text-brand-400 text-2xl font-bold">⚡ OmniFocus Studio</div>
+      </div>
+      <div class="flex gap-2 text-xs">
+        <div class="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 text-brand-400 font-bold"><span id="xpCount">0 XP</span></div>
+        <button id="btnOpenLibrary" class="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800">📚 Aulas (<span id="libraryCount">0</span>)</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="libraryModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+    <div class="ultra-glass p-6 w-full max-w-lg">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-4">
+        <h3 class="font-bold">📚 Minhas Aulas</h3>
+        <button id="btnCloseLibrary" class="text-red-400 font-bold">X</button>
+      </div>
+      <div id="libraryList" class="space-y-2 overflow-y-auto max-h-64"></div>
+    </div>
+  </div>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Lado Esquerdo: Criação -->
+    <section class="lg:col-span-5 ultra-glass p-6 flex flex-col gap-4">
+      <h2 class="font-bold text-lg">✨ Criar Aula Gamificada</h2>
+      <form id="createLessonForm" class="flex flex-col gap-3">
+        <input type="text" id="lessonTitle" placeholder="Título da Matéria" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-white">
+        <input type="url" id="youtubeUrl" placeholder="Link do YouTube (Opcional)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-white">
+
+        <div class="border border-dashed border-slate-700 rounded-lg p-4 text-center cursor-pointer relative hover:border-brand-500">
+          <input type="file" id="fileInput" multiple accept=".pdf,.txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+          <span id="uploadText" class="text-sm text-slate-400">📄 Arraste ou clique para enviar PDFs ou TXT</span>
+        </div>
+
+        <textarea id="lessonContent" rows="3" placeholder="Texto extraído..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-slate-300"></textarea>
+
+        <button type="submit" id="btnGenerate" class="bg-brand-500 hover:bg-brand-400 text-slate-900 font-bold py-3 rounded-lg transition disabled:opacity-50">⚡ <span id="btnGenText">Gerar Aula Gamificada</span></button>
+      </form>
+    </section>
+
+    <!-- Lado Direito: Arena e Player -->
+    <section class="lg:col-span-7 flex flex-col gap-4">
+
+      <div id="mediaContainer" class="ultra-glass p-2 relative flex flex-col justify-center min-h-[300px] text-center overflow-hidden">
+
+        <div id="placeholderMedia" class="text-slate-500 text-sm">Crie ou carregue uma aula para iniciar.</div>
+
+        <div id="ytWrapper" class="hidden w-full aspect-video relative">
+          <div id="ytPlayerDiv" class="w-full h-full"></div>
+          <div id="videoLockOverlay" class="hidden locked-overlay flex-col gap-2">
+            <span class="text-4xl">⏸️</span>
+            <span class="font-bold text-brand-400">Pausa para Dopamina!</span>
+            <span class="text-xs text-slate-300">Responda a questão abaixo para continuar assistindo.</span>
+          </div>
+        </div>
+
+        <div id="slideWrapper" class="hidden w-full p-8 flex flex-col items-center justify-center bg-slate-900 rounded-lg border border-slate-700 min-h-[250px] relative">
+          <button id="btnReadAloud" class="absolute top-3 right-3 text-2xl hover:scale-110 transition">🔊</button>
+          <h3 id="slideTextDisplay" class="text-xl font-bold text-brand-100 leading-relaxed mb-4"></h3>
+        </div>
+      </div>
+
+      <div id="interactiveArena" class="ultra-glass p-6">
+        <div class="flex justify-between text-xs font-bold text-slate-400 mb-4 border-b border-slate-700 pb-2">
+          <span id="lessonStatus">Aguardando...</span>
+          <span id="stepIndicator">0 / 0</span>
+        </div>
+
+        <h3 id="questionText" class="font-bold text-lg mb-4 text-white">Nenhuma questão ativa.</h3>
+        <div id="optionsGrid" class="flex flex-col gap-2"></div>
+        <div id="feedbackBox" class="hidden mt-4 p-4 rounded-lg text-sm font-bold border"></div>
+
+        <div class="mt-4 flex justify-end">
+          <button id="btnNextStep" class="hidden bg-slate-800 text-white px-4 py-2 rounded-lg font-bold border border-slate-700 hover:bg-brand-600 hover:text-slate-900 transition">Avançar ➔</button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    function safeParse(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+      catch { return fallback; }
+    }
+
+    const state = {
+      xp: parseInt(localStorage.getItem('omni_xp') || '0', 10),
+      library: safeParse('omni_lessons_library', []),
+      currentLesson: null,
+      currentStep: 0,
+      apiServerlessUrl: '/api/generate',
+      isQuestionLocked: false,
+      answered: false,
+      ytPlayerObj: null,
+      loadedVideoId: null,
+      ytRetries: 0,
+      videoCheckInterval: null
+    };
+
+    document.getElementById('xpCount').textContent = `${state.xp} XP`;
+    document.getElementById('libraryCount').textContent = state.library.length;
+
+    // ---------- PERSISTÊNCIA ----------
+    function saveActiveSession() {
+      try {
+        if (state.currentLesson) {
+          localStorage.setItem('omni_active_session', JSON.stringify({ lesson: state.currentLesson, step: state.currentStep }));
+        } else {
+          localStorage.removeItem('omni_active_session');
+        }
+      } catch (e) { console.warn('Sem espaço no localStorage', e); }
+    }
+
+    function saveLibrary() {
+      try { localStorage.setItem('omni_lessons_library', JSON.stringify(state.library)); }
+      catch (e) { console.warn('Sem espaço no localStorage', e); }
+    }
+
+    function startLesson(lesson, step = 0) {
+      state.currentLesson = lesson;
+      state.currentStep = step;
+      state.loadedVideoId = null; // força o vídeo a começar do zero em aula nova
+      saveActiveSession();
+      renderStep();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const session = safeParse('omni_active_session', null);
+      if (session && session.lesson && Array.isArray(session.lesson.steps) && session.lesson.steps[session.step]) {
+        startLesson(session.lesson, session.step);
+      }
+    });
+
+    // ---------- EXTRAÇÃO DE ARQUIVOS (PDF e TXT) ----------
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+      const label = document.getElementById('uploadText');
+      const target = document.getElementById('lessonContent');
+      label.textContent = 'Lendo arquivos...';
+      let ok = 0;
+
+      for (const file of files) {
+        try {
+          let text = '';
+          if (file.name.toLowerCase().endsWith('.pdf')) {
+            const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+            for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+              const page = await pdf.getPage(i);
+              const content = await page.getTextContent();
+              text += content.items.map(item => item.str).join(' ') + ' ';
+            }
+          } else {
+            text = await file.text();
+          }
+          target.value += text + '\n';
+          ok++;
+        } catch (err) {
+          console.error('Erro ao ler', file.name, err);
+        }
+      }
+      label.textContent = `📄 ${ok}/${files.length} arquivo(s) extraído(s)!`;
+      e.target.value = '';
+    });
+
+    // ---------- GERAÇÃO DA AULA ----------
+    function parseYoutubeId(url) {
+      const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      return m ? m[1] : null;
+    }
+
+    document.getElementById('createLessonForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('lessonTitle').value.trim();
+      const content = document.getElementById('lessonContent').value.trim();
+      const ytUrl = document.getElementById('youtubeUrl').value.trim();
+
+      if (!content) return alert('Envie um PDF ou cole o texto da matéria.');
+
+      let ytId = null;
+      if (ytUrl) {
+        ytId = parseYoutubeId(ytUrl);
+        if (!ytId) return alert('Link do YouTube inválido.');
+      }
+
+      const btn = document.getElementById('btnGenerate');
+      const btnText = document.getElementById('btnGenText');
+      btn.disabled = true;
+      btnText.textContent = 'IA a processar...';
+
+      try {
+        const res = await fetch(state.apiServerlessUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, content, youtubeUrl: ytId ? ytUrl : '' })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Falha no servidor');
+        }
+
+        const data = await res.json();
+        if (!Array.isArray(data.steps) || !data.steps.length) {
+          throw new Error('A IA não devolveu passos válidos. Tente novamente.');
+        }
+
+        const newLesson = { title, youtubeId: ytId, steps: data.steps };
+        state.library.push(newLesson);
+        saveLibrary();
+        document.getElementById('libraryCount').textContent = state.library.length;
+
+        startLesson(newLesson, 0);
+        alert('Aula gamificada gerada com sucesso!');
+      } catch (err) {
+        alert('Erro: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Gerar Aula Gamificada';
+      }
+    });
+
+    // ---------- RENDERIZAÇÃO ----------
+    function renderStep() {
+      if (!state.currentLesson) return;
+      const lesson = state.currentLesson;
+      const step = lesson.steps[state.currentStep];
+      if (!step) return;
+
+      const isVideo = !!lesson.youtubeId;
+
+      // Espera a API do YouTube carregar (evita "YT is not defined" no F5)
+      if (isVideo && !ytReady) {
+        if (++state.ytRetries > 40) {
+          state.ytRetries = 0;
+          alert('Não foi possível carregar o player do YouTube. Desative bloqueadores de anúncio e recarregue a página.');
+          return;
+        }
+        setTimeout(renderStep, 300);
+        return;
+      }
+      state.ytRetries = 0;
+
+      document.getElementById('lessonStatus').textContent = `Módulo: ${lesson.title}`;
+      document.getElementById('stepIndicator').textContent = `${state.currentStep + 1} / ${lesson.steps.length}`;
+      document.getElementById('questionText').textContent = step.question;
+
+      document.getElementById('placeholderMedia').classList.add('hidden');
+      const ytWrapper = document.getElementById('ytWrapper');
+      const slideWrapper = document.getElementById('slideWrapper');
+
+      state.isQuestionLocked = false;
+      state.answered = false;
+
+      if (isVideo) {
+        // MODO VÍDEO
+        window.speechSynthesis.cancel();
+        slideWrapper.classList.add('hidden');
+        ytWrapper.classList.remove('hidden');
+        document.getElementById('videoLockOverlay').classList.add('hidden');
+
+        const vid = lesson.youtubeId;
+        if (!state.ytPlayerObj) {
+          state.loadedVideoId = vid;
+          state.ytPlayerObj = new YT.Player('ytPlayerDiv', {
+            videoId: vid,
+            events: {
+              onStateChange: (ev) => {
+                if (ev.data === YT.PlayerState.PLAYING) startVideoMonitor();
+                else clearInterval(state.videoCheckInterval);
+              }
+            }
+          });
+        } else if (state.loadedVideoId !== vid) {
+          state.loadedVideoId = vid;
+          state.ytPlayerObj.loadVideoById?.(vid);
+        } else {
+          // Mesmo vídeo, próximo passo: só continua de onde parou
+          state.ytPlayerObj.playVideo?.();
+        }
+      } else {
+        // MODO SLIDE / PDF
+        if (state.ytPlayerObj?.pauseVideo) state.ytPlayerObj.pauseVideo();
+        clearInterval(state.videoCheckInterval);
+        ytWrapper.classList.add('hidden');
+        slideWrapper.classList.remove('hidden');
+        document.getElementById('slideTextDisplay').textContent = step.slideText || 'Prepare-se para o desafio!';
+        lerTexto(step.slideText);
+      }
+
+      // Opções
+      const grid = document.getElementById('optionsGrid');
+      grid.innerHTML = '';
+      document.getElementById('feedbackBox').classList.add('hidden');
+      document.getElementById('btnNextStep').classList.add('hidden');
+
+      (step.options || []).forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'text-left p-3 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 transition font-medium text-sm text-slate-200';
+        btn.textContent = `${idx + 1}. ${opt}`;
+        btn.onclick = () => handleAnswer(idx, step);
+        grid.appendChild(btn);
+      });
+    }
+
+    // ---------- MONITOR DO VÍDEO ----------
+    // A IA não vê o vídeo, então os tempos dela são chutes.
+    // Usamos a duração real e distribuímos as pausas igualmente.
+    function getStepTime(stepIndex) {
+      const lesson = state.currentLesson;
+      const duration = state.ytPlayerObj?.getDuration?.() || 0;
+      if (duration > 0) {
+        return Math.floor(duration * (stepIndex + 1) / (lesson.steps.length + 1));
+      }
+      return lesson.steps[stepIndex].time || null;
+    }
+
+    function startVideoMonitor() {
+      clearInterval(state.videoCheckInterval);
+      state.videoCheckInterval = setInterval(() => {
+        const p = state.ytPlayerObj;
+        if (!p || !p.getCurrentTime || !state.currentLesson) return;
+        if (state.isQuestionLocked || state.answered) return;
+
+        const pauseAt = getStepTime(state.currentStep);
+        if (pauseAt && p.getCurrentTime() >= pauseAt) {
+          p.pauseVideo();
+          state.isQuestionLocked = true;
+          document.getElementById('videoLockOverlay').classList.remove('hidden');
+          document.getElementById('interactiveArena').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 1000);
+    }
+
+    // ---------- RESPOSTA ----------
+    function handleAnswer(selected, step) {
+      state.answered = true;
+      state.isQuestionLocked = false;
+
+      const box = document.getElementById('feedbackBox');
+      box.classList.remove('hidden');
+      document.getElementById('btnNextStep').classList.remove('hidden');
+      document.getElementById('optionsGrid').querySelectorAll('button').forEach(b => b.disabled = true);
+
+      const head = document.createElement('div');
+      const detail = document.createElement('span');
+      detail.className = 'font-normal text-xs mt-1 block';
+
+      if (selected === step.correct) {
+        state.xp += 50;
+        try { localStorage.setItem('omni_xp', state.xp); } catch {}
+        document.getElementById('xpCount').textContent = `${state.xp} XP`;
+        box.className = 'mt-4 p-4 rounded-lg text-sm font-bold border border-brand-500 bg-brand-900/40 text-brand-300';
+        head.textContent = '✅ Correto! +50 XP';
+        detail.textContent = step.explanation || '';
+      } else {
+        box.className = 'mt-4 p-4 rounded-lg text-sm font-bold border border-red-500 bg-red-900/40 text-red-300';
+        head.textContent = '❌ Ops!';
+        detail.textContent = 'Dica: ' + (step.explanation || '');
+      }
+
+      box.replaceChildren(head, detail);
+
+      if (step.lifeTask) {
+        const task = document.createElement('span');
+        task.className = 'font-normal text-xs mt-2 block text-slate-300';
+        task.textContent = '🎯 Desafio: ' + step.lifeTask;
+        box.appendChild(task);
+      }
+
+      // Libera o vídeo (acertando ou errando)
+      if (state.currentLesson.youtubeId && state.ytPlayerObj) {
+        document.getElementById('videoLockOverlay').classList.add('hidden');
+        state.ytPlayerObj.playVideo?.();
+      }
+    }
+
+    document.getElementById('btnNextStep').addEventListener('click', () => {
+      if (state.currentStep < state.currentLesson.steps.length - 1) {
+        state.currentStep++;
+        saveActiveSession();
+        renderStep();
+      } else {
+        alert('🎉 Módulo Concluído com Sucesso!');
+        state.currentLesson = null;
+        saveActiveSession();
+        location.reload();
+      }
+    });
+
+    // ---------- VOZ ----------
+    function lerTexto(texto) {
+      if (!texto) return;
+      window.speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance(texto);
+      msg.lang = 'pt-BR';
+      msg.rate = 1.1;
+      window.speechSynthesis.speak(msg);
+    }
+
+    document.getElementById('btnReadAloud').addEventListener('click', () => {
+      lerTexto(document.getElementById('slideTextDisplay').textContent);
+    });
+
+    // ---------- BIBLIOTECA ----------
+    document.getElementById('btnOpenLibrary').addEventListener('click', () => {
+      const list = document.getElementById('libraryList');
+      list.innerHTML = '';
+
+      if (!state.library.length) {
+        const empty = document.createElement('div');
+        empty.className = 'text-sm text-slate-400 p-3';
+        empty.textContent = 'Nenhuma aula salva ainda.';
+        list.appendChild(empty);
+      }
+
+      state.library.forEach((les) => {
+        const div = document.createElement('div');
+        div.className = 'flex justify-between items-center p-3 border-b border-slate-700 hover:bg-slate-800 cursor-pointer text-sm text-slate-200';
+        const name = document.createElement('span');
+        name.textContent = les.title;
+        const go = document.createElement('button');
+        go.className = 'text-brand-400 font-bold';
+        go.textContent = 'Carregar';
+        div.append(name, go);
+        div.onclick = () => {
+          document.getElementById('libraryModal').classList.add('hidden');
+          startLesson(les, 0);
+        };
+        list.appendChild(div);
+      });
+
+      document.getElementById('libraryModal').classList.remove('hidden');
+    });
+
+    document.getElementById('btnCloseLibrary').addEventListener('click', () => {
+      document.getElementById('libraryModal').classList.add('hidden');
+    });
+  </script>
+</body>
+</html>
