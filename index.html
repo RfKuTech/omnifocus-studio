@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OmniFocus Studio — DopaMind</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; frame-src 'self' https://www.youtube.com https://accounts.google.com https://content.googleapis.com; connect-src 'self' https://omnifocus-studio.vercel.app https://www.googleapis.com https://accounts.google.com https://api.github.com https://github.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; frame-src 'self' https://www.youtube.com https://accounts.google.com https://content.googleapis.com; connect-src 'self' https://omnifocus-studio.vercel.app https://www.googleapis.com https://accounts.google.com https://api.github.com https://github.com https://www.youtube.com https://s.ytimg.com;">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -12,6 +12,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
     tailwind.config = {
@@ -73,9 +75,9 @@
       <p class="text-xs text-slate-400 mb-6 leading-relaxed">Conecte sua conta para salvar automaticamente seu progresso e biblioteca de aulas.</p>
       <div class="space-y-3.5">
         <button id="btnLoginGoogle" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-semibold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-3 transition">🔵 Google Drive Sync</button>
-        <button id="btnLoginGithub" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-semibold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-3 transition">⚫ GitHub (token)</button>
+        <button id="btnLoginGithub" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-semibold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-3 transition">⚫ Entrar com GitHub</button>
       </div>
-      <p class="text-[10px] text-slate-500 mt-4 leading-relaxed">Google: seus dados ficam numa pasta privada do app no seu Drive. GitHub: use um token clássico com a permissão <span class="font-mono">gist</span>; os dados ficam num gist secreto.</p>
+      <p class="text-[10px] text-slate-500 mt-4 leading-relaxed">Google: seus dados ficam numa pasta privada do app no seu Drive. GitHub: autorize sua conta para salvar em um gist não listado (quem tiver o link poderá acessá-lo). Escolha Google Drive para dados privados.</p>
       <div id="syncPanel" class="hidden mt-4 pt-4 border-t border-slate-800 space-y-3">
         <p id="syncWho" class="text-xs text-slate-200 font-semibold"></p>
         <p id="syncStatus" class="text-[11px] text-slate-400"></p>
@@ -129,13 +131,13 @@
           </select>
         </div>
         <div>
-          <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Link do YouTube (Opcional)</label>
-          <input type="url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:border-brand-500 focus:outline-none transition">
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Links do YouTube (Opcionais)</label>
+          <textarea id="youtubeUrl" rows="2" placeholder="Cole até 5 links do YouTube, um por linha" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:border-brand-500 focus:outline-none transition"></textarea>
         </div>
         <div>
-          <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Upload de PDFs / Textos</label>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Arquivos PDF, DOCX, textos e imagens</label>
           <div class="relative border border-dashed border-slate-800 hover:border-brand-500/60 rounded-xl p-4 text-center cursor-pointer transition bg-slate-900/40 hover:bg-slate-900/60 group">
-            <input type="file" id="fileInput" multiple accept=".pdf,.txt,.md" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            <input type="file" id="fileInput" multiple accept=".pdf,.txt,.md,.csv,.json,.docx,.png,.jpg,.jpeg,.webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
             <div class="text-xs text-slate-400 flex flex-col items-center gap-1">
               <span class="text-2xl text-slate-500 group-hover:text-brand-400 transition">📄</span>
               <span id="uploadText" class="font-medium text-slate-300 text-[11px]">Arraste ou clique para enviar seus PDFs</span>
@@ -206,6 +208,7 @@
     </section>
   </main>
 
+  <script src="lesson-player.js"></script>
   <script>
     const GOOGLE_CLIENT_ID = '19530400764-jesfucnmgr9l4uh32etfluould2huqus.apps.googleusercontent.com';
     const $ = (id) => document.getElementById(id);
@@ -215,7 +218,7 @@
     }
     function save(key, value) {
       try { localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value)); } catch (e) { console.warn('localStorage cheio', e); }
-      if (['omni_xp', 'omni_streak', 'omni_lessons_library'].includes(key)) scheduleSync();
+      if (['omni_xp', 'omni_streak', 'omni_lessons_library', 'omni_life_tasks'].includes(key)) scheduleSync();
     }
 
     const state = {
@@ -225,7 +228,7 @@
       currentLesson: null,
       mode: 'video',
       examAnswers: [],
-      completedLifeTasks: {},
+      completedLifeTasks: readJSON('omni_life_tasks', {}),
       answeredSteps: new Set(),
       timerInterval: null,
       timeLeft: 600,
@@ -279,8 +282,25 @@
       safeSetText('streakCount', `${state.streak} Sequência`);
     }
 
+    function activateAccount(provider, id) {
+      const key = `${provider}:${id}`;
+      const previous = localStorage.getItem('omni_account');
+      const snapshot = { xp: state.xp, streak: state.streak, library: state.library, completedLifeTasks: state.completedLifeTasks };
+      if (previous) localStorage.setItem('omni_account_data_' + previous, JSON.stringify(snapshot));
+      if (previous !== key) {
+        const data = readJSON('omni_account_data_' + key, previous ? { xp: 0, streak: 0, library: [], completedLifeTasks: {} } : snapshot);
+        Object.assign(state, data);
+        localStorage.setItem('omni_xp', String(state.xp));
+        localStorage.setItem('omni_streak', String(state.streak));
+        localStorage.setItem('omni_lessons_library', JSON.stringify(state.library));
+        localStorage.setItem('omni_life_tasks', JSON.stringify(state.completedLifeTasks));
+        updateLibraryUI();
+      }
+      localStorage.setItem('omni_account', key);
+    }
     // ---------- Login ----------
     $('btnLoginGoogle').addEventListener('click', () => {
+      if (state.syncing) return showToast('Aguarde a sincronização antes de trocar de conta.', 'error');
       if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
         return showToast('Login Google indisponível. Desative bloqueadores e recarregue.', 'error');
       }
@@ -288,6 +308,7 @@
         const client = google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
           scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile',
+          error_callback: () => showToast('O login não foi concluído. Permita a janela de acesso e tente novamente.', 'error'),
           callback: async (resp) => {
             if (resp.error || !resp.access_token) return showToast('Não foi possível conectar ao Google.', 'error');
             state.accessToken = resp.access_token;
@@ -301,8 +322,11 @@
             try {
               const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: `Bearer ${state.accessToken}` } });
               const p = await res.json();
-              state.user = { name: p.name, email: p.email };
+              if (!res.ok || !p.sub) throw new Error();
+              state.user = { name: p.name, email: p.email, id: p.sub };
             } catch (e) { state.user = { name: 'Google User' }; }
+            if (!state.user.id) { state.accessToken = null; localStorage.removeItem('omni_access_token'); return showToast('Não foi possível verificar a conta Google. Entre novamente.', 'error'); }
+            activateAccount('google', state.user.id);
             save('omni_user_profile', state.user);
             updateProfileUI();
             $('authModal').classList.add('hidden');
@@ -310,31 +334,51 @@
             cloudSync(true);
           }
         });
-        client.requestAccessToken();
+        client.requestAccessToken({ prompt: 'select_account' });
       } catch (err) { showToast('Falha ao iniciar o login do Google.', 'error'); }
     });
 
+    const authApi = new URL('github-auth', state.apiServerlessUrl).href;
+    const base64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     $('btnLoginGithub').addEventListener('click', async () => {
-      const token = (prompt('Cole seu token clássico do GitHub (permissão "gist"):') || '').trim();
-      if (!token) return;
-      let profile;
-      try { profile = await (await ghFetch('/user', {}, token)).json(); }
-      catch (err) { return showToast('Token inválido ou sem conexão.', 'error'); }
-      state.accessToken = token;
-      state.provider = 'github';
-      state.cloudId = null;
-      state.tokenExp = 0;
-      state.user = { name: profile.name || profile.login, email: profile.email || '' };
-      save('omni_access_token', token);
-      save('omni_provider', 'github');
-      save('omni_user_profile', state.user);
-      localStorage.removeItem('omni_cloud_id');
-      localStorage.removeItem('omni_token_exp');
-      updateProfileUI();
-      $('authModal').classList.add('hidden');
-      showToast('GitHub conectado!', 'success');
-      cloudSync(true);
+      if (state.syncing) return showToast('Aguarde a sincronização antes de trocar de conta.', 'error');
+      try {
+        const res = await fetch(authApi);
+        const config = await res.json();
+        if (!res.ok || !config.clientId) throw new Error('Configure o login GitHub no servidor antes de conectar.');
+        const nonce = base64url(crypto.getRandomValues(new Uint8Array(32)));
+        const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
+        const challenge = base64url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
+        const redirectUri = location.origin + location.pathname;
+        sessionStorage.setItem('omni_oauth', JSON.stringify({ nonce, verifier, redirectUri, at: Date.now() }));
+        const params = new URLSearchParams({ client_id: config.clientId, redirect_uri: redirectUri, scope: 'gist', state: nonce, code_challenge: challenge, code_challenge_method: 'S256' });
+        location.assign('https://github.com/login/oauth/authorize?' + params);
+      } catch (err) { showToast(err.message, 'error'); }
     });
+    async function completeGithubLogin() {
+      const params = new URLSearchParams(location.search);
+      if (!params.has('code') && !params.has('error')) return;
+      const pending = JSON.parse(sessionStorage.getItem('omni_oauth') || 'null');
+      sessionStorage.removeItem('omni_oauth');
+      history.replaceState(null, '', location.pathname + location.hash);
+      try {
+        if (!pending || Date.now() - pending.at > 600000 || params.get('state') !== pending.nonce) throw new Error('Autorização inválida ou expirada. Entre novamente.');
+        if (params.has('error')) throw new Error('Autorização do GitHub cancelada.');
+        const res = await fetch(authApi, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: params.get('code'), codeVerifier: pending.verifier, redirectUri: pending.redirectUri }) });
+        const data = await res.json();
+        if (!res.ok || !data.access_token) throw new Error(data.error || 'Falha no login GitHub.');
+        const profile = await (await ghFetch('/user', {}, data.access_token)).json();
+        Object.assign(state, { accessToken: data.access_token, provider: 'github', cloudId: null, tokenExp: 0, user: { name: profile.name || profile.login, id: profile.id } });
+        activateAccount('github', profile.id);
+        save('omni_access_token', state.accessToken);
+        save('omni_provider', state.provider);
+        save('omni_user_profile', state.user);
+        localStorage.removeItem('omni_cloud_id');
+        localStorage.removeItem('omni_token_exp');
+        updateProfileUI(); renderAuthPanel();
+        await cloudSync(true);
+      } catch (err) { showToast(err.message, 'error'); }
+    }
 
     updateProfileUI();
 
@@ -361,20 +405,34 @@
       const label = $('uploadText'), area = $('lessonContent');
       label.textContent = `Lendo ${files.length} arquivo(s)...`;
       let ok = 0;
+      $('btnGenerate').disabled = true;
+      state.readingFiles = true;
       for (const file of files) {
         try {
           const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-          const text = isPdf ? await extractPdfText(file) : await file.text();
+          if (file.size > 20 * 1024 * 1024) throw new Error('Arquivo acima de 20 MB');
+          const ext = file.name.split('.').pop().toLowerCase();
+          let text;
+          if (isPdf) text = await extractPdfText(file);
+          else if (ext === 'docx') text = (await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value;
+          else if (['png','jpg','jpeg','webp'].includes(ext)) {
+            const result = await Tesseract.recognize(file, 'por'); text = result.data.text;
+          } else if (['txt','md','csv','json'].includes(ext)) text = await file.text();
+          else throw new Error('Formato não suportado. Converta para PDF, DOCX, texto ou imagem.');
+          if (!text || !text.trim()) throw new Error('Nenhum texto legível. Para PDF escaneado, envie as páginas como imagens.');
           if (text) { area.value += `\n--- [${isPdf ? 'PDF' : 'Arquivo'}: ${file.name}] ---\n${text}\n`; ok++; }
-        } catch (err) { showToast(`Erro ao ler ${file.name}`, 'error'); }
+        } catch (err) { showToast(`${file.name}: ${err.message}`, 'error'); }
       }
       if (ok) showToast(`${ok} arquivo(s) extraído(s)!`, 'success');
       label.textContent = 'Arraste ou clique para enviar seus PDFs';
       e.target.value = '';
+      state.readingFiles = false;
+      $('btnGenerate').disabled = false;
     });
 
     // ---------- Geração da aula ----------
     function extractYouTubeId(url) {
+      try { const u = new URL(url); if (!["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"].includes(u.hostname)) return null; } catch { return null; }
       if (!url || typeof url !== 'string') return null;
       const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
       return m ? m[1] : null;
@@ -385,7 +443,7 @@
         const res = await fetch(state.apiServerlessUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, content, youtubeUrl })
+          body: JSON.stringify({ title, content, youtubeUrls: youtubeUrl })
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || `Erro ${res.status} no servidor.`);
@@ -405,19 +463,18 @@
       const ytUrl = $('youtubeUrl').value.trim();
       if (!title) return;
 
-      let ytId = null;
-      if (ytUrl) {
-        ytId = extractYouTubeId(ytUrl);
-        if (!ytId) return showToast('Link do YouTube inválido.', 'error');
-      }
+      if (state.readingFiles) return showToast('Aguarde a leitura dos arquivos.', 'error');
+      const urls = ytUrl.split(/\s+/).filter(Boolean);
+      if (urls.length > 5 || urls.some(u => !extractYouTubeId(u))) return showToast('Envie até 5 links válidos do YouTube.', 'error');
+      if (!content && !urls.length) return showToast('Adicione arquivos, texto ou vídeos.', 'error');
 
       const btn = $('btnGenerate');
       btn.disabled = true;
       safeSetText('btnGenText', 'DopaMind criando Aula...');
       try {
-        const data = await generateLessonViaServerless(title, content || title, ytId ? ytUrl : '');
+        const data = await generateLessonViaServerless(title, content, urls);
         if (data) {
-          const lesson = { title, youtubeId: ytId, steps: data.steps };
+          const lesson = { title, steps: data.steps, exam: data.exam, sourceVideoIds: data.sourceVideoIds, youtubeUrls: urls, sourceText: content };
           saveLessonToLibrary(lesson);
           startLesson(lesson);
           showToast('Módulo criado com sucesso!', 'success');
@@ -428,26 +485,25 @@
       }
     });
 
-    function showMedia(ytId) {
-      if (ytId) {
-        $('ytIframe').src = `https://www.youtube.com/embed/${encodeURIComponent(ytId)}?autoplay=1`;
-        $('ytPlayerWrapper').classList.remove('hidden');
-        $('playerPlaceholder').classList.add('hidden');
-      } else {
-        $('ytIframe').src = '';
-        $('ytPlayerWrapper').classList.add('hidden');
-        $('playerPlaceholder').classList.remove('hidden');
-      }
+    function showMedia() {
+      lessonPlayer.stop();
+      $('ytPlayerWrapper').classList.add('hidden');
+      $('playerPlaceholder').classList.add('hidden');
     }
 
     function startLesson(lesson) {
       state.currentLesson = lesson;
       state.currentStep = 0;
+      state.examFinished = false;
       state.mode = $('learningMode').value;
       state.examAnswers = new Array(lesson.steps.length).fill(null);
       state.answeredSteps = new Set();
       if (state.mode === 'exam') startExamTimer(); else stopExamTimer();
-      showMedia(lesson.youtubeId);
+      if (state.mode === 'exam' && lesson.exam?.length) {
+        state.currentLesson = { ...lesson, steps: lesson.exam, originalLesson: lesson };
+        state.examAnswers = new Array(lesson.exam.length).fill(null);
+      }
+      showMedia(null);
       renderCurrentStep();
     }
 
@@ -500,6 +556,7 @@
       $('progressBar').style.width = `${Math.min(100, Math.round(((state.currentStep + 1) / total) * 100))}%`;
 
       if (state.currentStep >= total) {
+        lessonPlayer.stop();
         if (state.mode === 'exam') finishExamModule(); else renderModuleCompletion();
         return;
       }
@@ -557,11 +614,13 @@
       });
 
       $('btnPrevStep').disabled = state.currentStep === 0;
+      lessonPlayer.render(step);
       $('btnNextStep').querySelector('span').textContent =
         state.currentStep === total - 1 ? (state.mode === 'exam' ? 'Entregar Simulado' : 'Concluir Módulo') : 'Avançar Tópico';
     }
 
     function handleOptionSelect(selected, correct, explanation) {
+      if (state.mode === 'video' && !lessonPlayer.canAnswer()) return;
       if (state.mode === 'exam') {
         state.examAnswers[state.currentStep] = selected;
         renderCurrentStep();
@@ -604,6 +663,8 @@
     function finishExamModule() {
       stopExamTimer();
       playSound('success');
+      if (state.examFinished) return;
+      state.examFinished = true;
       const total = state.currentLesson.steps.length;
       let correctCount = 0;
       state.currentLesson.steps.forEach((s, i) => { if (state.examAnswers[i] === s.correct) correctCount++; });
@@ -614,6 +675,7 @@
 
       $('summaryCard').classList.add('hidden');
       $('lifeModuleCard').classList.add('hidden');
+      if ($('narratedScene')) $('narratedScene').classList.add('hidden');
       safeSetText('stepIndicator', 'Simulado Finalizado!');
       showResult('📊', 'Resultado DopaMind',
         `Você acertou <strong>${correctCount} de ${total}</strong> questões (${pct}% de aproveitamento).`,
@@ -625,6 +687,12 @@
     function renderModuleCompletion() {
       playSound('success');
       state.answeredSteps = new Set(); // reiniciar libera as etapas
+      if ($('narratedScene')) {
+        $('narratedScene').classList.remove('hidden');
+        $('sceneStatus').textContent = 'Aula concluída. Você pode fazer o simulado final.';
+        $('scenePlay').disabled = true;
+        $('sceneRead').disabled = true;
+      }
       $('summaryCard').classList.add('hidden');
       $('lifeModuleCard').classList.add('hidden');
       safeSetText('stepIndicator', 'Módulo Concluído!');
@@ -633,6 +701,8 @@
     }
 
     function showResult(icon, heading, bodyHtml, badge) {
+      $('questionContainer').classList.remove('hidden');
+      $('btnNextStep').disabled = false;
       const q = $('questionText');
       q.innerHTML = '';
       const box = document.createElement('div');
@@ -650,8 +720,10 @@
     $('btnNextStep').addEventListener('click', () => {
       if (!state.currentLesson) return;
       const total = state.currentLesson.steps.length;
+      if (state.mode === 'video' && state.currentStep < total && !state.answeredSteps.has(state.currentStep)) return showToast('Assista à etapa e responda à pergunta para continuar.', 'error');
       if (state.currentStep >= total) {
         state.currentStep = 0;
+        state.examFinished = false;
         state.examAnswers = new Array(total).fill(null);
         state.answeredSteps = new Set();
         if (state.mode === 'exam') startExamTimer();
@@ -667,11 +739,14 @@
 
     $('btnCompleteLifeTask').addEventListener('click', () => {
       if (!state.currentLesson) return;
+      const taskKey = `${state.currentLesson.title}_step_${state.currentStep}`;
+      if (state.completedLifeTasks[taskKey]) return;
       playSound('success');
       state.xp += 100;
       save('omni_xp', String(state.xp));
       safeSetText('xpCount', `${state.xp} XP`);
       state.completedLifeTasks[`${state.currentLesson.title}_step_${state.currentStep}`] = true;
+      save('omni_life_tasks', state.completedLifeTasks);
       showToast('Missão DopaMind Concluída! +100 XP', 'success');
       renderCurrentStep();
     });
@@ -795,7 +870,7 @@
     }
 
     async function ghFetch(path, opts = {}, token = state.accessToken) {
-      const res = await fetch(`https://api.github.com${path}`, { ...opts, headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', ...(opts.headers || {}) } });
+      const res = await fetch(`https://api.github.com${path}`, { ...opts, headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', ...(opts.headers || {}) } });
       if (res.status === 401) throw authError();
       if (!res.ok) throw new Error(`GitHub: erro ${res.status}${res.status === 403 || res.status === 404 ? ' (confira se o token tem a permissão gist)' : ''}`);
       return res;
@@ -811,6 +886,7 @@
       if (!id) return { id: null, data: null };
       const g = await (await ghFetch(`/gists/${id}`)).json();
       const f = g.files && g.files[CLOUD_FILE];
+      if (f?.truncated) throw new Error('Biblioteca muito grande para sincronizar pelo GitHub. Use Google Drive.');
       let data = null;
       try { data = f && f.content ? JSON.parse(f.content) : null; } catch (e) {}
       return { id, data };
@@ -835,7 +911,8 @@
         if (!prev || (l.updatedAt || 0) >= (prev.updatedAt || 0)) map.set(k, l);
       });
       return {
-        version: 1,
+        version: 2,
+        completedLifeTasks: { ...(remote?.completedLifeTasks || {}), ...(local.completedLifeTasks || {}) },
         xp: Math.max(local.xp, Number(remote && remote.xp) || 0),
         streak: Math.max(local.streak, Number(remote && remote.streak) || 0),
         library: [...map.values()].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)),
@@ -876,10 +953,12 @@
       try {
         const google = state.provider === 'google';
         const { id, data } = await (google ? drivePull() : ghPull());
-        const merged = mergeData({ xp: state.xp, streak: state.streak, library: state.library }, data);
+        const merged = mergeData({ xp: state.xp, streak: state.streak, library: state.library, completedLifeTasks: state.completedLifeTasks }, data);
         state.xp = merged.xp;
         state.streak = merged.streak;
         state.library = merged.library;
+        state.completedLifeTasks = merged.completedLifeTasks;
+        localStorage.setItem('omni_life_tasks', JSON.stringify(merged.completedLifeTasks));
         try {
           localStorage.setItem('omni_xp', String(merged.xp));
           localStorage.setItem('omni_streak', String(merged.streak));
@@ -910,6 +989,7 @@
     }
 
     function disconnectCloud() {
+      if (state.syncing) return showToast('Aguarde a sincronização terminar.', 'error');
       if (state.provider === 'google' && state.accessToken && window.google && google.accounts && google.accounts.oauth2) {
         try { google.accounts.oauth2.revoke(state.accessToken, () => {}); } catch (e) {}
       }
@@ -926,7 +1006,8 @@
 
     updateLibraryUI();
     renderAuthPanel();
-    if (state.provider) cloudSync();
+    if (new URLSearchParams(location.search).has('code') || new URLSearchParams(location.search).has('error')) completeGithubLogin();
+    else if (state.provider) cloudSync();
   </script>
 </body>
 </html>
