@@ -6,7 +6,7 @@ Node 20 ou superior. `npm test` valida as respostas da IA, fontes de vídeo, lim
 
 ## Configuração na Vercel
 - `GEMINI_API_KEY`: chave do Google AI, somente no servidor.
-- `GEMINI_MODEL`: opcional, padrão `gemini-2.5-flash`. O modelo precisa aceitar vídeos públicos do YouTube e JSON.
+- `GEMINI_MODEL`: opcional, padrão `gemini-3.5-flash-lite`. O modelo precisa aceitar vídeos públicos do YouTube e JSON.
 - `GITHUB_CLIENT_ID` e `GITHUB_CLIENT_SECRET`: credenciais de uma **OAuth App**, criada nas configurações de desenvolvedor do GitHub. Callback: URL exata da página do aplicativo (por exemplo `https://omnifocus-studio.vercel.app/`). O fluxo solicita somente `gist`, usa state e PKCE e troca o código no servidor.
 - `APP_ORIGINS`: origens permitidas, separadas por vírgulas. Padrão: `https://omnifocus-studio.vercel.app,https://rfkutech.github.io`. Para outra instalação, configure a origem e o callback correspondentes.
 - Faça novo deploy após configurar variáveis. `api/generate.js` requer até 120 segundos; confira se o plano da hospedagem comporta esse tempo.
