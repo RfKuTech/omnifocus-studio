@@ -1,5 +1,7 @@
+import { geminiFailure } from '../lib/gemini-error.js';
 import { youtubeId, validateLesson } from '../lib/lesson.js';
 export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -29,8 +31,13 @@ Retorne JSON {steps:[...],exam:[...]}.
       body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.4, maxOutputTokens: 24000 } }),
       signal: AbortSignal.timeout(110000)
     });
-    const result = await response.json();
-    if (!response.ok) throw new Error(urls.length ? 'Não foi possível analisar os materiais e vídeos. Verifique se os vídeos são públicos e se a API tem cota disponível.' : 'Não foi possível gerar a aula. Verifique o modelo e a cota da API.');
+    const result = await response.json().catch(() => null);
+    if (!response.ok) {
+      const failure = geminiFailure(response.status, result);
+      console.error('Gemini request failed', { code: failure.body.code, providerStatus: response.status });
+      return res.status(failure.status).json(failure.body);
+    }
+    if (!result) return res.status(502).json({ error: 'O serviço de IA devolveu uma resposta ilegível. Tente novamente.', code: 'GEMINI_INVALID_RESPONSE' });
     const candidate = result.candidates?.[0];
     if (candidate?.finishReason !== 'STOP') throw new Error('A geração ficou incompleta. Tente dividir o material em aulas menores.');
     const raw = (candidate.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
