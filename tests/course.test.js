@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sourceCatalog, validateOutline, validateChapter, validateFinalExam, grade, isCourse } from '../lib/course.js';
+import { courseSchema } from '../lib/course-schema.js';
 import handler, { coursePrompt } from '../api/course.js';
 import { content, outline, sources, chapter, question, courseFixture } from './fixtures/course.js';
 
@@ -32,8 +33,18 @@ test('contrato usa capítulos progressivos, fonte integral e etapa separada, sem
  const r={setHeader(){},status(n){this.code=n;return this},json(d){this.data=d;return this}};
  try{
   await handler({method:'POST',body:{action:'outline',title:'Estatística',content}},r);assert.equal(r.code,200);assert.equal(r.data.sources.length,2);
+  assert.ok(payload.generationConfig.responseJsonSchema.required.includes('chapters'));
   const all=JSON.stringify(payload);assert.match(all,/aplicacoes.txt/);assert.match(all,/estatistica.txt/);
   assert.match(coursePrompt('chapter','Teste',outline,outline.chapters[0]),/worked-example/);
   await handler({method:'POST',body:{action:'chapter',title:'Teste',content,outline,chapterId:'desconhecido'}},r);assert.equal(r.code,400);
  }finally{globalThis.fetch=old;if(key===undefined)delete process.env.GEMINI_API_KEY;else process.env.GEMINI_API_KEY=key;}
+});
+
+test('envia esquema obrigatório de exercícios completos ao provedor',()=>{
+ const schema=courseSchema('chapter',sources,outline,outline.chapters[0]);
+ const q=schema.properties.quiz.items;
+ assert.deepEqual(q.properties.options,{type:'array',items:{type:'string'},minItems:4,maxItems:4});
+ assert.ok(q.required.includes('rationales'));assert.ok(q.required.includes('hint'));assert.ok(q.required.includes('skill'));
+ assert.deepEqual(schema.properties.scenes.items.properties.checkpoint.type,['object','null']);
+ assert.equal(courseSchema('final',sources,outline).properties.questions.minItems,8);
 });
