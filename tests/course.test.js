@@ -33,7 +33,7 @@ test('contrato usa capítulos progressivos, fonte integral e etapa separada, sem
  const r={setHeader(){},status(n){this.code=n;return this},json(d){this.data=d;return this}};
  try{
   await handler({method:'POST',body:{action:'outline',title:'Estatística',content}},r);assert.equal(r.code,200);assert.equal(r.data.sources.length,2);
-  assert.ok(payload.generationConfig.responseFormat.text.schema.required.includes('chapters'));
+  assert.ok(payload.generationConfig.responseSchema.required.includes('chapters'));
   const all=JSON.stringify(payload);assert.match(all,/aplicacoes.txt/);assert.match(all,/estatistica.txt/);
   assert.match(coursePrompt('chapter','Teste',outline,outline.chapters[0]),/worked-example/);
   await handler({method:'POST',body:{action:'chapter',title:'Teste',content,outline,chapterId:'desconhecido'}},r);assert.equal(r.code,400);
@@ -48,4 +48,22 @@ test('envia esquema obrigatório de exercícios completos ao provedor',()=>{
  assert.ok(q.required.includes('rationales'));assert.ok(q.required.includes('hint'));assert.ok(q.required.includes('skill'));
  assert.deepEqual(schema.properties.scenes.items.properties.checkpoint.type,['object','null']);
  assert.equal(courseSchema('final',sources,outline).properties.questions.minItems,8);
+});
+
+test('incompatibilidade de esquema permite uma tentativa JSON sem relaxar a validação',async()=>{
+ const old=globalThis.fetch,key=process.env.GEMINI_API_KEY;process.env.GEMINI_API_KEY='test';let calls=[];
+ globalThis.fetch=async(u,opts)=>{
+  calls.push(JSON.parse(opts.body));
+  if(calls.length===1)return {ok:false,status:400,json:async()=>({error:{message:'Unsupported response schema'}})};
+  return {ok:true,status:200,json:async()=>({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(chapter)}]}}]})};
+ };
+ const r={setHeader(){},status(n){this.code=n;return this},json(d){this.data=d;return this}};
+ try{
+  await handler({method:'POST',body:{action:'chapter',title:'Estatística',content,outline,chapterId:'c1'}},r);
+  assert.equal(r.code,200);assert.equal(calls.length,2);
+  assert.equal(calls[0].generationConfig.responseSchema.type,'OBJECT');
+  assert.equal(calls[1].generationConfig.responseSchema,undefined);
+  assert.match(calls[1].contents[0].parts.at(-1).text,/rationales/);
+  assert.ok(r.data.chapter.estimatedMinutes>=5);
+ }finally{globalThis.fetch=old;if(key===undefined)delete process.env.GEMINI_API_KEY;else process.env.GEMINI_API_KEY=key;}
 });

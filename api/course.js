@@ -51,11 +51,21 @@ export default async function handler(req, res) {
   const parts = [{text:coursePrompt(action,title,outline,chapter)}, ...selected.flatMap(s => s.url ? [{text:`Fonte ${s.id}: ${s.url}`},{file_data:{file_uri:`https://www.youtube.com/watch?v=${youtubeId(s.url)}`}}] : [{text:`<fonte id="${s.id}">Nome: ${s.name}\n${s.text}\n</fonte>`}])];
   try {
     const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':process.env.GEMINI_API_KEY},
-      body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{responseFormat:{text:{mimeType:'application/json',schema:providerSchema(courseSchema(action,sources,outline,chapter))}},temperature:0.45,maxOutputTokens:action === 'chapter' ? 28000 : 12000}}), signal:AbortSignal.timeout(110000)
-    });
-    const result = await response.json().catch(() => null);
+    const endpoint=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    const schema=courseSchema(action,sources,outline,chapter);
+    const deadline=Date.now()+110000;
+    const generationConfig={responseMimeType:'application/json',responseSchema:providerSchema(schema),temperature:0.45,maxOutputTokens:action==='chapter'?28000:12000};
+    const send=async(config,requestParts)=>{
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':process.env.GEMINI_API_KEY},body:JSON.stringify({contents:[{role:'user',parts:requestParts}],generationConfig:config}),signal:AbortSignal.timeout(Math.max(1,deadline-Date.now()))});
+      return {response,result:await response.json().catch(()=>null)};
+    };
+    let {response,result}=await send(generationConfig,parts);
+    // Some model/API versions reject schema configuration. Retry only that error,
+    // retaining the full contract in the prompt and the same semantic validation.
+    if(response.status===400 && /schema|unknown name.*response|response.?format/i.test(result?.error?.message||'')){
+      const {responseSchema,...jsonConfig}=generationConfig;
+      ({response,result}=await send(jsonConfig,[...parts,{text:`Contrato JSON obrigatório. Preencha todas as propriedades required, inclusive hint, skill e as quatro rationales em cada exercício. Não use nomes alternativos. ${JSON.stringify(schema)}`}])) ;
+    }
     if (!response.ok) { const f = geminiFailure(response.status,result); return res.status(f.status).json(f.body); }
     const candidate = result?.candidates?.[0];
     if (candidate?.finishReason !== 'STOP') return res.status(502).json({error:'A IA não concluiu esta etapa. O curso salvo foi mantido; tente gerar a etapa novamente.',code:'COURSE_INCOMPLETE'});
