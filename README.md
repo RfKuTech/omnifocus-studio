@@ -6,6 +6,8 @@ Node 20 ou superior. `npm ci && npm run build` gera o CSS local (sem depender do
 
 `CHROMIUM_PATH=/caminho/para/chromium npm run test:browser` inicia um servidor local e verifica reprodução, pausa/retomada, interrupção automática em questionários, bloqueio de avanço, resolução de caso, notas, biblioteca e layout móvel. Usa narração simulada e dados de teste; não chama a IA nem serviços de nuvem. As capturas são gravadas em `/tmp` ou `SCREENSHOTS_DIR`.
 
+O CSS compilado é versionado. A Vercel serve os arquivos diretamente, sem instalar dependências de desenvolvimento nem executar o build; ao alterar classes, execute `npm run build` antes do commit.
+
 O frontend estático pode ser servido com `python -m http.server`; a geração e o OAuth precisam dos endpoints hospedados na Vercel.
 
 ## Configuração na Vercel
