@@ -1,1 +1,16 @@
-{"name":"omnifocus-studio","version":"3.8.0","private":true,"type":"module","scripts":{"test":"node --test","check":"node --check api/generate.js && node --check api/github-auth.js && node --check lesson-player.js"}}
+{
+  "name": "omnifocus-studio",
+  "version": "4.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node --check api/generate.js && node --check api/github-auth.js && node --check lesson-player.js && node --check api/course.js && node --check course-player.js",
+    "build": "tailwindcss -i styles.input.css -o styles.css --minify",
+    "test:browser": "node tests/browser.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0",
+    "tailwindcss": "^3.4.17"
+  }
+}
