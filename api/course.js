@@ -1,4 +1,4 @@
-import { courseSchema } from '../lib/course-schema.js';
+import { courseSchema, providerSchema } from '../lib/course-schema.js';
 import { sourceCatalog, validateOutline, validateChapter, validateFinalExam } from '../lib/course.js';
 import { youtubeId } from '../lib/lesson.js';
 import { geminiFailure } from '../lib/gemini-error.js';
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':process.env.GEMINI_API_KEY},
-      body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:courseSchema(action,sources,outline,chapter),temperature:0.45,maxOutputTokens:action === 'chapter' ? 28000 : 12000}}), signal:AbortSignal.timeout(110000)
+      body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{responseFormat:{text:{mimeType:'application/json',schema:providerSchema(courseSchema(action,sources,outline,chapter))}},temperature:0.45,maxOutputTokens:action === 'chapter' ? 28000 : 12000}}), signal:AbortSignal.timeout(110000)
     });
     const result = await response.json().catch(() => null);
     if (!response.ok) { const f = geminiFailure(response.status,result); return res.status(f.status).json(f.body); }
