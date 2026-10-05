@@ -1,1 +1,1 @@
-{"functions":{"api/generate.js":{"maxDuration":120}}}
+{"functions":{"api/generate.js":{"maxDuration":120},"api/course.js":{"maxDuration":120}}}
