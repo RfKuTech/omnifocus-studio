@@ -268,6 +268,7 @@ export class CoursePlayer {
     this.main.append(node('p','course-description','Responda todas as questões. As justificativas aparecem depois da entrega.'));
     questions.forEach((q,qi)=>{
       const box=node('section','course-review');box.append(node('p','course-kicker',`${qi+1} / ${questions.length} · ${q.skill}`),node('h4','course-question',q.prompt));
+      if(q.scenario){const scenario=node('p','course-feedback',q.scenario);box.insertBefore(scenario,box.querySelector('.course-question'));}
       q.options.forEach((t,i)=>{const b=button(t,()=>{answers[qi]=i;box.querySelectorAll('button').forEach((n,j)=>{n.classList.toggle('selected',j===i);n.setAttribute('aria-pressed',String(j===i))});this.persist();});b.className='course-option';b.classList.toggle('selected',answers[qi]===i);b.setAttribute('aria-pressed',String(answers[qi]===i));b.disabled=submitted;
         if(submitted)b.classList.toggle('right',i===q.correct);box.append(b);});
       if(submitted){const feedback=node('div','course-feedback');feedback.append(node('strong','',answers[qi]===q.correct?'Você acertou.':'Reveja este conceito.'));q.rationales.forEach((r,i)=>feedback.append(node('p','',`${String.fromCharCode(65+i)} · ${r}`)));box.append(feedback);}

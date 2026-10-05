@@ -13,7 +13,7 @@ Formato: {title,description,goals:[2 a 8 resultados concretos],prerequisites:[co
 Cada fonte precisa de pelo menos um conceito no mapa. Cada capítulo usa todas as fontes necessárias aos conceitos que ensina.`;
   if (action === 'final') return `${base}
 Prepare um simulado INTEGRADOR baseado nas fontes e neste plano: ${JSON.stringify(outline)}.
-Gere entre ${Math.max(8, outline.chapters.length)} e 16 questões novas. Cubra todos os capítulos pelo menos uma vez. Use análise de casos, interpretação de dados presentes nas fontes, resolução de problemas e comparação de decisões. Evite perguntas de mera memorização, alternativas absurdas e a repetição do enunciado como resposta.
+Gere entre ${Math.max(8, outline.chapters.length)} e 16 questões novas. Cada questão inclui scenario (caso com pelo menos 100 caracteres e dados ou restrições concretas) e cognitiveLevel (apply, analyze ou evaluate). Cubra todos os capítulos pelo menos uma vez. Use análise de casos, interpretação de dados presentes nas fontes, resolução de problemas e comparação de decisões. Evite perguntas de mera memorização, alternativas absurdas e a repetição do enunciado como resposta.
 Formato {questions:[{...questão,chapterId}]}. Contrato de questão: ${QUESTION}. Exatamente 4 options e 4 rationales; correct é índice de 0 a 3.`;
   return `${base}
 Desenvolva APENAS o capítulo ${JSON.stringify(chapter)}, do curso ${JSON.stringify(outline)}.
@@ -24,7 +24,7 @@ Formato de visual: {kind,items:[{id,label:"até 70 caracteres",detail:"até 180 
 Formato de beat: {narration:"35 a 75 palavras",caption:"legenda curta da ideia",focus:[ids dos elementos destacados nesta fala]}.
 Insira checkpoint a cada 2 ou 3 cenas; OBRIGATÓRIO na 3ª, 6ª, 9ª cena quando existirem, e na última cena. A reprodução pausa automaticamente. Pergunte sobre APLICAÇÃO do que foi ensinado e use distratores baseados em erros comuns, não pegadinhas. Contrato: ${QUESTION}. Exatamente 4 options e 4 rationales, correct de 0 a 3. Nas demais cenas, checkpoint:null.
 Após a aula: practice é um estudo de caso substancial, com cenário, tarefa que exija produzir uma resposta e 3 a 6 critérios observáveis. Inclua uma modelAnswer de ao menos 150 caracteres com resolução explicada. Não proponha "pense nisso", "anote uma ideia", "respire" ou tarefas vagas como exercício principal.
-quiz: de 4 a 8 questões INÉDITAS, mais profundas que os checkpoints, com cenários e justificativas individuais.
+quiz: de 4 a 8 questões INÉDITAS de aplicação, análise ou avaliação. Cada uma deve incluir scenario (um caso de ao menos 100 caracteres, com dados, restrições ou decisões concretas) e cognitiveLevel (apply, analyze ou evaluate). O prompt pergunta sobre esse caso. Exija cálculo, comparação justificada, identificação de falha em um raciocínio ou decisão sob restrições. PROIBIDO perguntar definições, "o que é", "qual requisito" ou repetir regras. Todas as alternativas devem ser plausíveis e resultar de equívocos reais. Distribua o índice correct entre alternativas diferentes. Exemplos numéricos hipotéticos precisam ser identificados. As justificativas mostram o raciocínio de resolução, não só "correto/incorreto".
 Retorne {id:"${chapter.id}",title,scenes:[{title,role:"concept|worked-example|application|recap",topicIds,sourceIds,visual,beats,checkpoint}],practice:{scenario,prompt,criteria,modelAnswer},quiz:[questões]}.
 sourceIds e topicIds devem existir no capítulo. Conteúdo dos vídeos anexados deve ser integrado à explicação animada, não apenas citado como link.`;
 }

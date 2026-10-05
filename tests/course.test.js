@@ -18,6 +18,7 @@ test('rejeita resumos superficiais, cenas sem exemplo e exercícios sem justific
  const noExample=structuredClone(chapter);noExample.scenes.forEach(s=>s.role='concept');assert.throws(()=>validateChapter(noExample,outline.chapters[0]),/exemplo/);
  const noPause=structuredClone(chapter);noPause.scenes[2].checkpoint=null;assert.throws(()=>validateChapter(noPause,outline.chapters[0]),/pausa/);
  const badDiagram=structuredClone(chapter);badDiagram.scenes[0].beats[0].focus=['inventado'];assert.throws(()=>validateChapter(badDiagram,outline.chapters[0]),/destaque/);
+ const recall=structuredClone(chapter);delete recall.quiz[0].scenario;assert.throws(()=>validateChapter(recall,outline.chapters[0]),/situações-problema/);
  const badQuestion=structuredClone(chapter);badQuestion.quiz[0].rationales=[];assert.throws(()=>validateChapter(badQuestion,outline.chapters[0]),/justificativas/);
 });
 test('simulado integrador cobre todos os capítulos; nota não conta respostas em branco',()=>{
@@ -45,7 +46,7 @@ test('envia esquema obrigatório de exercícios completos ao provedor',()=>{
  const q=schema.properties.quiz.items;
  assert.deepEqual(q.properties.options,{type:'array',items:{type:'string'},minItems:4,maxItems:4});
  assert.equal(providerSchema(schema).properties.scenes.maxItems,undefined);
- assert.ok(q.required.includes('rationales'));assert.ok(q.required.includes('hint'));assert.ok(q.required.includes('skill'));
+ assert.ok(q.required.includes('scenario'));assert.ok(q.required.includes('cognitiveLevel'));assert.ok(q.required.includes('rationales'));assert.ok(q.required.includes('hint'));assert.ok(q.required.includes('skill'));
  assert.deepEqual(schema.properties.scenes.items.properties.checkpoint.type,['object','null']);
  assert.equal(courseSchema('final',sources,outline).properties.questions.minItems,8);
 });
