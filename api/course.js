@@ -59,21 +59,32 @@ export default async function handler(req, res) {
       const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':process.env.GEMINI_API_KEY},body:JSON.stringify({contents:[{role:'user',parts:requestParts}],generationConfig:config}),signal:AbortSignal.timeout(Math.max(1,deadline-Date.now()))});
       return {response,result:await response.json().catch(()=>null)};
     };
-    let {response,result}=await send(generationConfig,parts);
+    let activeConfig=generationConfig;
+    let {response,result}=await send(activeConfig,parts);
     // Some model/API versions reject schema configuration. Retry only that error,
     // retaining the full contract in the prompt and the same semantic validation.
     if(response.status===400 && /schema|unknown name.*response|response.?format/i.test(result?.error?.message||'')){
-      const {responseSchema,...jsonConfig}=generationConfig;
+      const {responseSchema,...jsonConfig}=generationConfig;activeConfig=jsonConfig;
       ({response,result}=await send(jsonConfig,[...parts,{text:`Contrato JSON obrigatório. Preencha todas as propriedades required, inclusive hint, skill e as quatro rationales em cada exercício. Não use nomes alternativos. ${JSON.stringify(schema)}`}])) ;
     }
-    if (!response.ok) { const f = geminiFailure(response.status,result); return res.status(f.status).json(f.body); }
-    const candidate = result?.candidates?.[0];
-    if (candidate?.finishReason !== 'STOP') return res.status(502).json({error:'A IA não concluiu esta etapa. O curso salvo foi mantido; tente gerar a etapa novamente.',code:'COURSE_INCOMPLETE'});
-    const raw = (candidate.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
-    const data = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g,'').trim());
-    if (action === 'outline') return res.status(200).json({outline:validateOutline(data,sources),sources:sources.map(({text,...s})=>s)});
-    if (action === 'chapter') return res.status(200).json({chapter:validateChapter(data,chapter)});
-    return res.status(200).json({exam:validateFinalExam(data,outline)});
+    for(let attempt=0;attempt<3;attempt++){
+      if (!response.ok) { const f = geminiFailure(response.status,result); return res.status(f.status).json(f.body); }
+      const candidate = result?.candidates?.[0];
+      if (candidate?.finishReason !== 'STOP') return res.status(502).json({error:'A IA não concluiu esta etapa. O curso salvo foi mantido; tente gerar a etapa novamente.',code:'COURSE_INCOMPLETE'});
+      const raw = (candidate.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
+      let data;
+      try{
+        data = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g,'').trim());
+        if (action === 'outline') return res.status(200).json({outline:validateOutline(data,sources),sources:sources.map(({text,...s})=>s)});
+        if (action === 'chapter') return res.status(200).json({chapter:validateChapter(data,chapter)});
+        return res.status(200).json({exam:validateFinalExam(data,outline)});
+      }catch(validationError){
+        if(attempt===2 || deadline-Date.now()<20000)throw validationError;
+        const repair=`Revise o rascunho abaixo. Ele foi REPROVADO por: ${validationError.message}. Corrija a falha e confira TODAS as exigências do contrato. Preserve as partes corretas, mas devolva o objeto COMPLETO, nunca só alterações. Cada cena precisa de role exato; inclua ao menos uma worked-example com resolução em etapas e uma application com aplicação nova. Não basta renomear role: desenvolva a explicação correspondente. Confira mínimo 650 palavras de narração e pausas nas cenas 3, 6, 9 e última. Exercícios sempre têm prompt, 4 options, correct, 4 rationales, hint, skill. Contrato: ${JSON.stringify(schema)}. Rascunho: ${data?JSON.stringify(data):raw}`;
+        ({response,result}=await send(activeConfig,[...parts,{text:repair}]));
+      }
+    }
+
   } catch (err) {
     const error = err.name === 'TimeoutError' ? 'Esta etapa demorou demais. Seu curso foi preservado; tente novamente.' : err instanceof SyntaxError ? 'A IA devolveu dados incompletos. Tente gerar esta etapa novamente.' : err.message;
     return res.status(502).json({error,code:'COURSE_GENERATION_FAILED'});

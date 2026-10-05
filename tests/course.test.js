@@ -67,3 +67,12 @@ test('incompatibilidade de esquema permite uma tentativa JSON sem relaxar a vali
   assert.ok(r.data.chapter.estimatedMinutes>=5);
  }finally{globalThis.fetch=old;if(key===undefined)delete process.env.GEMINI_API_KEY;else process.env.GEMINI_API_KEY=key;}
 });
+
+test('revisa uma aula incompleta antes de entregar e mantém exigências de conteúdo',async()=>{
+ const old=globalThis.fetch,key=process.env.GEMINI_API_KEY;process.env.GEMINI_API_KEY='test';let calls=[];
+ const incomplete=structuredClone(chapter);incomplete.scenes.forEach(s=>s.role='concept');
+ globalThis.fetch=async(u,opts)=>{calls.push(JSON.parse(opts.body));return {ok:true,status:200,json:async()=>({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(calls.length===1?incomplete:chapter)}]}}]})}};
+ const r={setHeader(){},status(n){this.code=n;return this},json(d){this.data=d;return this}};
+ try{await handler({method:'POST',body:{action:'chapter',title:'Estatística',content,outline,chapterId:'c1'}},r);assert.equal(r.code,200);assert.equal(calls.length,2);assert.match(calls[1].contents[0].parts.at(-1).text,/REPROVADO/);assert.ok(r.data.chapter.scenes.some(s=>s.role==='worked-example'));}
+ finally{globalThis.fetch=old;if(key===undefined)delete process.env.GEMINI_API_KEY;else process.env.GEMINI_API_KEY=key;}
+});
